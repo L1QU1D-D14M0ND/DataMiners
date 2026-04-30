@@ -3,14 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'rank_number', 'experience', 'currency_a', 'play_time', 'role_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -26,7 +25,52 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'play_time' => 'date',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the role that the user belongs to.
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Get the cards owned by the user.
+     */
+    public function cards()
+    {
+        return $this->belongsToMany(Card::class, 'user_card', 'users_id', 'cards_id')
+            ->withPivot('unlocked')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the cosmetics owned by the user.
+     */
+    public function cosmetics()
+    {
+        return $this->belongsToMany(Cosmetic::class, 'user_cosmetic', 'users_id', 'cosmetics_id')
+            ->withPivot('unlocked')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the decks owned by the user.
+     */
+    public function decks()
+    {
+        return $this->hasMany(Deck::class);
+    }
+
+    /**
+     * Get the sets owned by the user.
+     */
+    public function sets()
+    {
+        return $this->hasMany(Set::class);
     }
 }
