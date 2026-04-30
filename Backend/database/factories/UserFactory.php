@@ -24,11 +24,18 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $playerRole = \App\Models\Role::where('name', 'Player')->first();
+
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'rank_number' => fake()->numberBetween(1, 50),
+            'experience' => fake()->numberBetween(0, 10000),
+            'currency_a' => fake()->numberBetween(0, 5000),
+            'play_time' => fake()->dateTime(),
+            'role_id' => $playerRole?->id,
             'remember_token' => Str::random(10),
         ];
     }

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('experience')->default(0);
             $table->unsignedBigInteger('currency_a')->default(0);
             $table->date('play_time')->nullable();
-            $table->foreignId('role_id')->nullable()->constrained('roles');
+            $table->unsignedBigInteger('role_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
