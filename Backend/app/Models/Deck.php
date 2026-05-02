@@ -8,16 +8,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Deck extends Model
 {
-    protected $fillable = ['user_id', 'name'];
-    protected $primaryKey = ['user_id', 'name'];
+    protected $fillable = ['id', 'name'];
+    protected $primaryKey = ['id', 'name'];
     public $incrementing = false;
+    protected $keyType = 'string';
 
     /**
      * Get the user that owns this deck.
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'id', 'id');
     }
 
     /**

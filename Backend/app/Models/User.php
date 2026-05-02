@@ -63,7 +63,7 @@ class User extends Authenticatable
      */
     public function decks()
     {
-        return $this->hasMany(Deck::class);
+        return $this->hasMany(Deck::class, 'id', 'id');
     }
 
     /**
@@ -71,6 +71,22 @@ class User extends Authenticatable
      */
     public function sets()
     {
-        return $this->hasMany(Set::class);
+        return $this->hasMany(Set::class, 'id', 'id');
+    }
+
+    /**
+     * Get the games where this user was player A.
+     */
+    public function gamesAsPlayerA()
+    {
+        return $this->hasMany(GameLog::class, 'user_a', 'id');
+    }
+
+    /**
+     * Get the games where this user was player B.
+     */
+    public function gamesAsPlayerB()
+    {
+        return $this->hasMany(GameLog::class, 'user_b', 'id');
     }
 }

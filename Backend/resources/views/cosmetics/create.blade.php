@@ -1,0 +1,73 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1>Create Cosmetic</h1>
+
+            @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Validation Error!</strong>
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            <form action="{{ route('cosmetics.store') }}" method="POST">
+                @csrf
+                <div class="mb-3">
+                    <label for="name" class="form-label">Cosmetic Name</label>
+                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}" required>
+                    @error('name')
+                        <span class="invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label for="cosmetic_type_id" class="form-label">Cosmetic Type</label>
+                    <select class="form-select @error('cosmetic_type_id') is-invalid @enderror" id="cosmetic_type_id" name="cosmetic_type_id" required>
+                        <option value="">Select a type</option>
+                        @foreach ($types as $type)
+                            <option value="{{ $type->id }}" {{ old('cosmetic_type_id') == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('cosmetic_type_id')
+                        <span class="invalid-feedback">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="experience_unlock" class="form-label">Experience Unlock</label>
+                            <input type="number" class="form-control @error('experience_unlock') is-invalid @enderror" id="experience_unlock" name="experience_unlock" value="{{ old('experience_unlock', 0) }}" min="0">
+                            @error('experience_unlock')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="currency_a_unlock" class="form-label">Currency A Unlock</label>
+                            <input type="number" class="form-control @error('currency_a_unlock') is-invalid @enderror" id="currency_a_unlock" name="currency_a_unlock" value="{{ old('currency_a_unlock', 0) }}" min="0">
+                            @error('currency_a_unlock')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary">Create Cosmetic</button>
+                    <a href="{{ route('cosmetics.index') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection
