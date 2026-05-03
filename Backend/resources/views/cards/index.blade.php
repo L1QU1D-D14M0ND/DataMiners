@@ -7,7 +7,7 @@
             <h1>Cards</h1>
         </div>
         <div class="col-md-6 text-end">
-            <a href="{{ route('cards.create') }}" class="btn btn-primary">Create Card</a>
+            <a href="{{ route('cards.create') }}" class="btn btn-success">+ Create Card</a>
         </div>
     </div>
 
@@ -18,25 +18,25 @@
         </div>
     @endif
 
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Experience Unlock</th>
-                    <th>Currency A Unlock</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($cards as $card)
-                    <tr>
-                        <td>{{ $card->id }}</td>
-                        <td>{{ $card->name }}</td>
-                        <td>{{ number_format($card->experience_unlock) }}</td>
-                        <td>{{ number_format($card->currency_a_unlock) }}</td>
-                        <td>
+    @if ($cards->count() > 0)
+        <div class="row">
+            @forelse ($cards as $card)
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 border">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ $card->name }}</h5>
+                            <dl class="row mb-3">
+                                <dt class="col-sm-5 text-truncate">ID:</dt>
+                                <dd class="col-sm-7">{{ $card->id }}</dd>
+                                
+                                <dt class="col-sm-5 text-truncate">Exp Unlock:</dt>
+                                <dd class="col-sm-7">{{ number_format($card->experience_unlock) }}</dd>
+                                
+                                <dt class="col-sm-5 text-truncate">Currency Unlock:</dt>
+                                <dd class="col-sm-7">{{ number_format($card->currency_a_unlock) }}</dd>
+                            </dl>
+                        </div>
+                        <div class="card-footer bg-white border-top">
                             <a href="{{ route('cards.show', $card) }}" class="btn btn-sm btn-info">View</a>
                             <a href="{{ route('cards.edit', $card) }}" class="btn btn-sm btn-warning">Edit</a>
                             <form action="{{ route('cards.destroy', $card) }}" method="POST" style="display: inline;">
@@ -44,19 +44,21 @@
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
                             </form>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="text-center">No cards found.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="col-12">
+                    <div class="alert alert-info">No cards found.</div>
+                </div>
+            @endforelse
+        </div>
 
-    <div class="d-flex justify-content-center">
-        {{ $cards->links() }}
-    </div>
+        <div class="d-flex justify-content-center mt-4">
+            {{ $cards->links() }}
+        </div>
+    @else
+        <div class="alert alert-info">No cards found. <a href="{{ route('cards.create') }}">Create one</a></div>
+    @endif
 </div>
 @endsection
