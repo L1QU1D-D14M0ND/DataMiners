@@ -12,10 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sets', function (Blueprint $table) {
-            $table->string('name');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->id();
+            $table->unsignedBigInteger('user_set_id');
+            $table->string('set_name');
+            $table->foreign('user_set_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
             $table->timestamps();
-            $table->primary(['name', 'user_id']);
         });
     }
 

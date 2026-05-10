@@ -15,5 +15,6 @@ class RoleSeeder extends Seeder
     {
         Role::create(['name' => 'Administrator']);
         Role::create(['name' => 'Player']);
+        $this->command->info('2 roles created successfully.');
     }
 }

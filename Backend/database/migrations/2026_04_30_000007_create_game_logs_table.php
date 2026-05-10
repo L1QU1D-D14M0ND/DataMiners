@@ -12,14 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('game_logs', function (Blueprint $table) {
+            $table->id();
             $table->unsignedBigInteger('user_a');
             $table->unsignedBigInteger('user_b');
-            $table->unsignedBigInteger('id');
-            $table->string('winner')->nullable();
+            $table->unsignedBigInteger('winner')->nullable();
             $table->timestamps();
-            $table->primary(['user_a', 'user_b', 'id']);
-            $table->foreign('user_a')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('user_b')->references('id')->on('users')->onDelete('cascade');
+            
+            // Foreign keys
+            $table->foreign('user_a')
+                ->references('id')
+                ->on('users')
+                ->onDelete('restrict');
+            $table->foreign('user_b')
+                ->references('id')
+                ->on('users')
+                ->onDelete('restrict');
         });
     }
 

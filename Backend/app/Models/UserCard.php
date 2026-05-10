@@ -7,17 +7,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserCard extends Model
 {
-    protected $fillable = ['users_id', 'cards_id', 'unlocked'];
+    protected $fillable = ['users_user_id', 'cards_card_id', 'unlocked'];
     protected $table = 'user_card';
-    protected $primaryKey = ['users_id', 'cards_id'];
+    protected $primaryKey = ['users_user_id', 'cards_card_id'];
     public $incrementing = false;
+    public $timestamps = false;
 
     /**
      * Get the user.
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'users_id');
+        return $this->belongsTo(User::class, 'users_user_id');
     }
 
     /**
@@ -25,6 +26,6 @@ class UserCard extends Model
      */
     public function card(): BelongsTo
     {
-        return $this->belongsTo(Card::class, 'cards_id');
+        return $this->belongsTo(Card::class, 'cards_card_id');
     }
 }

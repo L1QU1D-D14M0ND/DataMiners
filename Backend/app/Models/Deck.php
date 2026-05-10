@@ -8,17 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Deck extends Model
 {
-    protected $fillable = ['id', 'name'];
-    protected $primaryKey = ['id', 'name'];
-    public $incrementing = false;
-    protected $keyType = 'string';
+    protected $fillable = ['user_id', 'deck_name'];
 
     /**
      * Get the user that owns this deck.
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'id', 'id');
+        return $this->belongsTo(User::class);
     }
 
     /**
@@ -26,8 +23,6 @@ class Deck extends Model
      */
     public function cards(): BelongsToMany
     {
-        return $this->belongsToMany(Card::class, 'deck_card', 'decks_id', 'cards_id')
-            ->withPivot('decks_name')
-            ->withTimestamps();
+        return $this->belongsToMany(Card::class, 'deck_card', 'decks_deck_id', 'cards_card_id');
     }
 }

@@ -15,8 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->unsignedBigInteger('experience_unlock')->default(0);
-            $table->unsignedBigInteger('currency_a_unlock')->default(0);
-            $table->foreignId('cosmetic_type_id')->constrained('cosmetic_types');
+            $table->unsignedBigInteger('credits_unlock')->default(0);
+            $table->unsignedBigInteger('cosmetic_type_id');
+            $table->foreign('cosmetic_type_id')
+                ->references('id')
+                ->on('cosmetic_types')
+                ->onDelete('restrict');
             $table->timestamps();
         });
     }

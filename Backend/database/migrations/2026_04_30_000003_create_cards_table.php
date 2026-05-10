@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('decks', function (Blueprint $table) {
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+        Schema::create('cards', function (Blueprint $table) {
+            $table->id();
             $table->string('name');
+            $table->unsignedBigInteger('experience_unlock')->default(0);
+            $table->unsignedBigInteger('credits_unlock')->default(0);
             $table->timestamps();
-            $table->primary(['user_id', 'name']);
         });
     }
 
@@ -24,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('decks');
+        Schema::dropIfExists('cards');
     }
 };

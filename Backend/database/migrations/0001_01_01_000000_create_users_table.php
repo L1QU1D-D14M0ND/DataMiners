@@ -17,11 +17,13 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->unsignedBigInteger('rank_number')->default(0);
-            $table->unsignedBigInteger('experience')->default(0);
-            $table->unsignedBigInteger('currency_a')->default(0);
-            $table->date('play_time')->nullable();
-            $table->unsignedBigInteger('role_id')->nullable();
+            $table->unsignedBigInteger('rank_score')->default(0);
+            $table->unsignedBigInteger('experience_points')->default(0);
+            $table->unsignedBigInteger('credits')->default(0);
+            $table->unsignedBigInteger('play_time')->default(0);
+            $table->unsignedBigInteger('role_id');
+            $table->unsignedBigInteger('decks_deck_id')->nullable();
+            $table->unsignedBigInteger('sets_set_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

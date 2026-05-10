@@ -31,5 +31,7 @@ class CardSeeder extends Seeder
         foreach ($cards as $card) {
             Card::create(['name' => $card]);
         }
+
+        $this->command->info('12 cards have been seeded successfully.');
     }
 }

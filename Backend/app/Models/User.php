@@ -8,8 +8,14 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Role;
+use App\Models\Card;
+use App\Models\Cosmetic;
+use App\Models\Deck;
+use App\Models\Set;
+use App\Models\GameLog;
 
-#[Fillable(['name', 'email', 'password', 'rank_number', 'experience', 'currency_a', 'play_time', 'role_id'])]
+#[Fillable(['name', 'email', 'password', 'rank_score', 'experience_points', 'credits', 'play_time', 'role_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -25,7 +31,6 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'play_time' => 'date',
             'password' => 'hashed',
         ];
     }
@@ -43,19 +48,8 @@ class User extends Authenticatable
      */
     public function cards()
     {
-        return $this->belongsToMany(Card::class, 'user_card', 'users_id', 'cards_id')
-            ->withPivot('unlocked')
-            ->withTimestamps();
-    }
-
-    /**
-     * Get the cosmetics owned by the user.
-     */
-    public function cosmetics()
-    {
-        return $this->belongsToMany(Cosmetic::class, 'user_cosmetic', 'users_id', 'cosmetics_id')
-            ->withPivot('unlocked')
-            ->withTimestamps();
+        return $this->belongsToMany(Card::class, 'user_card', 'users_user_id', 'cards_card_id')
+            ->withPivot('unlocked');
     }
 
     /**
@@ -63,7 +57,7 @@ class User extends Authenticatable
      */
     public function decks()
     {
-        return $this->hasMany(Deck::class, 'id', 'id');
+        return $this->hasMany(Deck::class, 'user_id');
     }
 
     /**
@@ -71,7 +65,33 @@ class User extends Authenticatable
      */
     public function sets()
     {
-        return $this->hasMany(Set::class, 'id', 'id');
+        return $this->hasMany(Set::class, 'user_set_id');
+    }
+
+    /**
+     * Get the game logs where this user participated as player A.
+     */
+    public function gameLogsAsUserA()
+    {
+        return $this->hasMany(GameLog::class, 'user_a');
+    }
+
+    /**
+     * Get the game logs where this user participated as player B.
+     */
+    public function gameLogsAsUserB()
+    {
+        return $this->hasMany(GameLog::class, 'user_b');
+    }
+
+    /**
+     * Get the cosmetics owned by the user.
+     */
+    public function cosmetics()
+    {
+        return $this->belongsToMany(Cosmetic::class, 'user_cosmetic', 'user_id', 'cosmetic_id')
+            ->withPivot('unlocked')
+            ->withTimestamps();
     }
 
     /**

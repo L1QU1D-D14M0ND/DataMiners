@@ -18,8 +18,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             CosmeticTypeSeeder::class,
+            DefaultCosmeticsSeeder::class,
             CardSeeder::class,
             UserSeeder::class,
+            GameLogSeeder::class,
         ]);
     }
 }

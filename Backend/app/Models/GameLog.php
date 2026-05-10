@@ -4,13 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GameLog extends Model
 {
     protected $table = 'game_logs';
-    protected $fillable = ['id', 'user_a', 'user_b', 'winner'];
-    protected $primaryKey = ['user_a', 'user_b', 'id'];
-    public $incrementing = false;
+    protected $fillable = ['user_a', 'user_b', 'winner'];
 
     /**
      * Get the first user (player A) who participated in this game.
@@ -26,5 +25,22 @@ class GameLog extends Model
     public function userB(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_b', 'id');
+    }
+
+    /**
+     * Get the cards played in this game.
+     */
+    public function cards(): BelongsToMany
+    {
+        return $this->belongsToMany(Card::class, 'card_game_log', 'game_log_id', 'cards_card_id')
+            ->withPivot('user_id');
+    }
+
+    /**
+     * Get the winner user if the game is finished.
+     */
+    public function winner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'winner', 'id');
     }
 }

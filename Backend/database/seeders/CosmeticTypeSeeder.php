@@ -14,15 +14,16 @@ class CosmeticTypeSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            'Profile Card',
-            'Profile Decoration',
             'Profile Frame',
             'Profile Picture',
+            'Profile Card',
             'Profile Title',
         ];
 
         foreach ($types as $type) {
             CosmeticType::create(['name' => $type]);
         }
+
+        $this->command->info('4 cosmetic types created successfully.');
     }
 }
