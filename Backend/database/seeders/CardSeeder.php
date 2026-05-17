@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Card;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class CardSeeder extends Seeder
@@ -13,25 +12,22 @@ class CardSeeder extends Seeder
      */
     public function run(): void
     {
-        $cards = [
-            'Advanced CCTV',
-            'Advanced Satellite Deployment',
-            'Atmostphere Monitoring Array',
-            'Encript Communications',
-            'Energy Generation Audit',
-            'Hire Lawyer',
-            'Mark Protected Zones',
-            'Open Source Data',
-            'Orbital Scan',
-            'Prefabricated Wind Turbine',
-            'Sanction Drills',
-            'Supply Package',
+        // Frontend game cards - these match the cards in the frontend
+        $frontendCards = [
+            'Power Surge',
+            'Signal Relay',
+            'Factory Overdrive',
+            'Data Cache',
+            'Reinforced Grid',
+            'Ore Harvest',
+            'Deep Uplink',
+            'System Cooldown',
         ];
 
-        foreach ($cards as $card) {
-            Card::create(['name' => $card]);
+        foreach ($frontendCards as $card) {
+            Card::firstOrCreate(['name' => $card]);
         }
 
-        $this->command->info('12 cards have been seeded successfully.');
+        $this->command->info('Frontend game cards have been seeded successfully.');
     }
 }

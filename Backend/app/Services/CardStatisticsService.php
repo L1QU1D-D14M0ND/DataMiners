@@ -43,22 +43,22 @@ class CardStatisticsService
     private function getCardStats(Card $card, int $totalGames, int $totalDecks): array
     {
         // Games where this card was played
-        $gamesWithCard = CardGameLog::where('card_id', $card->id)->count();
+        $gamesWithCard = CardGameLog::where('cards_card_id', $card->id)->count();
 
         // Wins with this card
         $winsWithCard = 0;
         if ($gamesWithCard > 0) {
             $winsWithCard = DB::table('card_game_log')
                 ->join('game_logs', 'card_game_log.game_log_id', '=', 'game_logs.id')
-                ->where('card_game_log.card_id', $card->id)
-                ->whereRaw('(card_game_log.user = game_logs.winner OR card_game_log.user = game_logs.user_a AND game_logs.winner = game_logs.user_a OR card_game_log.user = game_logs.user_b AND game_logs.winner = game_logs.user_b)')
+                ->where('card_game_log.cards_card_id', $card->id)
+                ->whereRaw('(card_game_log.user_id = game_logs.winner OR card_game_log.user_id = game_logs.user_a AND game_logs.winner = game_logs.user_a OR card_game_log.user_id = game_logs.user_b AND game_logs.winner = game_logs.user_b)')
                 ->count();
         }
 
         // Decks containing this card
         $decksWithCard = DB::table('deck_card')
-            ->where('card_id', $card->id)
-            ->select('user_id', 'deck_name')
+            ->where('cards_card_id', $card->id)
+            ->select('decks_deck_id')
             ->distinct()
             ->count();
 

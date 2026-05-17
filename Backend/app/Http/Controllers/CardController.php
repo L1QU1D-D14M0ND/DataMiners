@@ -17,6 +17,15 @@ class CardController extends Controller
     }
 
     /**
+     * API: Get all cards for frontend mapping.
+     */
+    public function indexApi()
+    {
+        $cards = Card::all();
+        return response()->json($cards);
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()

@@ -1,13 +1,25 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<style>
+    .btn-custom-success { background-color: #10b981; border-color: #10b981; color: white; border-radius: 8px; padding: 10px 16px; font-size: 14px; height: 40px; display: inline-flex; align-items: center; }
+    .btn-custom-success:hover { background-color: #059669; border-color: #059669; }
+    .btn-custom-info { background-color: #3b82f6; border-color: #3b82f6; color: white; border-radius: 8px; padding: 10px 16px; font-size: 14px; height: 40px; display: inline-flex; align-items: center; }
+    .btn-custom-info:hover { background-color: #2563eb; border-color: #2563eb; }
+    .btn-custom-warning { background-color: #f59e0b; border-color: #f59e0b; color: white; border-radius: 8px; padding: 10px 16px; font-size: 14px; height: 40px; display: inline-flex; align-items: center; }
+    .btn-custom-warning:hover { background-color: #d97706; border-color: #d97706; }
+    .btn-custom-danger { background-color: #ef4444; border-color: #ef4444; color: white; border-radius: 8px; padding: 10px 16px; font-size: 14px; height: 40px; display: inline-flex; align-items: center; }
+    .btn-custom-danger:hover { background-color: #dc2626; border-color: #dc2626; }
+    .card-custom { box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1.5rem; margin-right: 1rem; padding: 1.5rem;}
+    .card-footer { gap: 0.5rem; }
+</style>
+<div class="container" style="margin-top: 2rem;">
     <div class="row mb-4">
         <div class="col-md-6">
-            <h1>Users</h1>
+            <h1 class="text-center">Users</h1>
         </div>
         <div class="col-md-6 text-end">
-            <a href="{{ route('users.create') }}" class="btn btn-success">+ Create User</a>
+            <a href="{{ route('users.create') }}" class="btn btn-custom-success">+ Create User</a>
         </div>
     </div>
 
@@ -19,10 +31,10 @@
     @endif
 
     @if ($users->count() > 0)
-        <div class="row">
+        <div class="row justify-content-center" style="margin: 0 2rem;">
             @forelse ($users as $user)
                 <div class="col-md-4 mb-4">
-                    <div class="card h-100 border">
+                    <div class="card h-100 border card-custom">
                         <div class="card-body">
                             <h5 class="card-title">{{ $user->name }}</h5>
                             <dl class="row mb-3">
@@ -32,23 +44,23 @@
                                 <dt class="col-sm-5 text-truncate">Email:</dt>
                                 <dd class="col-sm-7 text-truncate" title="{{ $user->email }}">{{ $user->email }}</dd>
                                 
-                                <dt class="col-sm-5 text-truncate">Rank:</dt>
-                                <dd class="col-sm-7">{{ $user->rank_number ?? 'N/A' }}</dd>
+                                <dt class="col-sm-5 text-truncate">Rank Score:</dt>
+                                <dd class="col-sm-7">{{ $user->rank_score ?? 'N/A' }}</dd>
                                 
-                                <dt class="col-sm-5 text-truncate">Experience:</dt>
-                                <dd class="col-sm-7">{{ number_format($user->experience) }}</dd>
+                                <dt class="col-sm-5 text-truncate">Experience Points:</dt>
+                                <dd class="col-sm-7">{{ number_format($user->experience_points) }}</dd>
                                 
                                 <dt class="col-sm-5 text-truncate">Role:</dt>
                                 <dd class="col-sm-7">{{ $user->role->name ?? 'N/A' }}</dd>
                             </dl>
                         </div>
-                        <div class="card-footer bg-white border-top">
-                            <a href="{{ route('users.show', $user) }}" class="btn btn-sm btn-info">View</a>
-                            <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-warning">Edit</a>
+                        <div class="card-footer bg-white border-top" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="{{ route('users.show', $user) }}" class="btn btn-sm btn-custom-info">View</a>
+                            <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-custom-warning">Edit</a>
                             <form action="{{ route('users.destroy', $user) }}" method="POST" style="display: inline;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                <button type="submit" class="btn btn-sm btn-custom-danger" onclick="return confirm('Are you sure?')">Delete</button>
                             </form>
                         </div>
                     </div>

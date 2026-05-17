@@ -1,13 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<style>
+    .btn-custom-success { background-color: #10b981; border-color: #10b981; color: white; border-radius: 8px; padding: 10px 20px; font-size: 14px; height: 44px; display: inline-flex; align-items: center; }
+    .btn-custom-success:hover { background-color: #059669; border-color: #059669; }
+    .btn-custom-secondary { background-color: #6b7280; border-color: #6b7280; color: white; border-radius: 8px; padding: 10px 20px; font-size: 14px; height: 44px; display: inline-flex; align-items: center; }
+    .btn-custom-secondary:hover { background-color: #4b5563; border-color: #4b5563; }
+    .card-custom { box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 1rem; margin-bottom: 1.5rem; padding: 1.5rem; }
+    .form-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+</style>
+<div class="container" style="margin-top: 2rem;">
     <div class="row mb-4">
         <div class="col-md-6">
             <h1>Create User</h1>
         </div>
         <div class="col-md-6 text-end">
-            <a href="{{ route('users.index') }}" class="btn btn-secondary">Back</a>
+            <a href="{{ route('users.index') }}" class="btn btn-custom-secondary">Back</a>
         </div>
     </div>
 
@@ -23,7 +31,7 @@
         </div>
     @endif
 
-    <div class="card">
+    <div class="card card-custom">
         <div class="card-body">
             <form action="{{ route('users.store') }}" method="POST">
                 @csrf
@@ -58,9 +66,9 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="rank_number" class="form-label">Rank Number</label>
-                    <input type="number" class="form-control @error('rank_number') is-invalid @enderror" id="rank_number" name="rank_number" value="{{ old('rank_number') }}" min="0">
-                    @error('rank_number')
+                    <label for="rank_score" class="form-label">Rank Score</label>
+                    <input type="number" class="form-control @error('rank_score') is-invalid @enderror" id="rank_score" name="rank_score" value="{{ old('rank_score') }}" min="0">
+                    @error('rank_score')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -78,8 +86,10 @@
                     @enderror
                 </div>
 
-                <button type="submit" class="btn btn-success">Create User</button>
-                <a href="{{ route('users.index') }}" class="btn btn-secondary">Cancel</a>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-custom-success">Create User</button>
+                    <a href="{{ route('users.index') }}" class="btn btn-custom-secondary">Cancel</a>
+                </div>
             </form>
         </div>
     </div>

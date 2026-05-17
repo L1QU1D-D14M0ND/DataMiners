@@ -1,7 +1,15 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<style>
+    .btn-custom-primary { background-color: #6366f1; border-color: #6366f1; color: white; border-radius: 8px; padding: 10px 20px; font-size: 14px; height: 44px; display: inline-flex; align-items: center; }
+    .btn-custom-primary:hover { background-color: #4f46e5; border-color: #4f46e5; }
+    .btn-custom-secondary { background-color: #6b7280; border-color: #6b7280; color: white; border-radius: 8px; padding: 10px 20px; font-size: 14px; height: 44px; display: inline-flex; align-items: center; }
+    .btn-custom-secondary:hover { background-color: #4b5563; border-color: #4b5563; }
+    .card-custom { box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 1rem; margin-bottom: 1.5rem; padding: 1.5rem; }
+    .form-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+</style>
+<div class="container" style="margin-top: 2rem;">
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <h1>Create Card</h1>
@@ -40,18 +48,18 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="currency_a_unlock" class="form-label">Currency A Unlock</label>
-                            <input type="number" class="form-control @error('currency_a_unlock') is-invalid @enderror" id="currency_a_unlock" name="currency_a_unlock" value="{{ old('currency_a_unlock', 0) }}" min="0">
-                            @error('currency_a_unlock')
+                            <label for="credits_unlock" class="form-label">Credits Unlock</label>
+                            <input type="number" class="form-control @error('credits_unlock') is-invalid @enderror" id="credits_unlock" name="credits_unlock" value="{{ old('credits_unlock', 0) }}" min="0">
+                            @error('credits_unlock')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                         </div>
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <button type="submit" class="btn btn-primary">Create Card</button>
-                    <a href="{{ route('cards.index') }}" class="btn btn-secondary">Cancel</a>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-custom-primary">Create Card</button>
+                    <a href="{{ route('cards.index') }}" class="btn btn-custom-secondary">Cancel</a>
                 </div>
             </form>
         </div>
