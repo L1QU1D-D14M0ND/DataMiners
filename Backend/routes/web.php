@@ -22,6 +22,10 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'admin'])
     ->name('dashboard');
 
+Route::get('/dashboard/frontend', [DashboardController::class, 'redirectToFrontend'])
+    ->middleware(['auth', 'verified', 'admin'])
+    ->name('dashboard.frontend');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -36,7 +40,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Public API routes for card data (no authentication required)
-Route::get('/cards', [CardController::class, 'indexApi'])->name('cards.api');
+Route::get('/api/cards', [CardController::class, 'indexApi'])->name('cards.api');
 
 // Resource routes for users, cards, and cosmetics (admin only)
 Route::resource('users', UserController::class)->middleware('admin');

@@ -18,7 +18,7 @@ class CardStatisticsService
     {
         $totalGames = GameLog::count();
         $totalDecks = DB::table('deck_card')
-            ->select('user_id', 'deck_name')
+            ->select('decks_deck_id')
             ->distinct()
             ->count();
 
