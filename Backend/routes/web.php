@@ -37,10 +37,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/decks/{deck}', [DeckController::class, 'show'])->name('decks.show');
     Route::put('/api/decks/{deck}', [DeckController::class, 'update'])->name('decks.update');
     Route::delete('/api/decks/{deck}', [DeckController::class, 'destroy'])->name('decks.destroy');
+
+    // User cosmetics API routes
+    Route::get('/api/user/cosmetics', [CosmeticController::class, 'userCosmetics'])->name('user.cosmetics');
 });
 
 // Public API routes for card data (no authentication required)
 Route::get('/api/cards', [CardController::class, 'indexApi'])->name('cards.api');
+
+// Public API route for all cosmetics (no authentication required)
+Route::get('/api/cosmetics', [CosmeticController::class, 'indexApi'])->name('cosmetics.api');
 
 // Resource routes for users, cards, and cosmetics (admin only)
 Route::resource('users', UserController::class)->middleware('admin');
