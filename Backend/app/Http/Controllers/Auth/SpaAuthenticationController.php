@@ -40,13 +40,30 @@ class SpaAuthenticationController extends Controller
     {
         $user = $request->user();
 
+        if (!$user) {
+            return response()->json(['user' => null]);
+        }
+
+        $equippedCosmetics = $user->cosmetics()
+            ->with('cosmeticType')
+            ->get()
+            ->map(fn ($cosmetic) => [
+                'id' => $cosmetic->id,
+                'name' => $cosmetic->name,
+                'type' => $cosmetic->cosmeticType->name ?? null,
+            ]);
+
         return response()->json([
-            'user' => $user ? [
+            'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role?->name,
-            ] : null,
+                'experience_points' => $user->experience_points,
+                'credits' => $user->credits,
+                'rank_score' => $user->rank_score,
+                'cosmetics' => $equippedCosmetics,
+            ],
         ]);
     }
 
