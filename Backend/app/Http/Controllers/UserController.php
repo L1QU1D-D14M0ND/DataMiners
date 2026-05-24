@@ -92,4 +92,57 @@ class UserController extends Controller
         return redirect()->route('users.index')
                        ->with('success', 'User deleted successfully.');
     }
+
+    /**
+     * API: Get profile data for authenticated user.
+     */
+    public function profileApi(Request $request)
+    {
+        $user = $request->user();
+        
+        $user->load(['sets.cosmetics.cosmeticType', 'cosmetics.cosmeticType']);
+        
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'experience_points' => $user->experience_points ?? 0,
+                'credits' => $user->credits ?? 0,
+                'rank_score' => $user->rank_score ?? 0,
+            ],
+            'sets' => $user->sets->map(function ($set) {
+                return [
+                    'id' => $set->id,
+                    'set_name' => $set->set_name,
+                    'cosmetics' => $set->cosmetics->map(function ($cosmetic) {
+                        return [
+                            'id' => $cosmetic->id,
+                            'name' => $cosmetic->name,
+                            'experience_unlock' => $cosmetic->experience_unlock,
+                            'credits_unlock' => $cosmetic->credits_unlock,
+                            'unlocked' => $cosmetic->pivot->unlocked ?? false,
+                            'cosmetic_type' => [
+                                'id' => $cosmetic->cosmeticType->id,
+                                'name' => $cosmetic->cosmeticType->name,
+                            ],
+                        ];
+                    }),
+                ];
+            }),
+            'user_cosmetics' => $user->cosmetics->map(function ($cosmetic) {
+                return [
+                    'id' => $cosmetic->id,
+                    'name' => $cosmetic->name,
+                    'experience_unlock' => $cosmetic->experience_unlock,
+                    'credits_unlock' => $cosmetic->credits_unlock,
+                    'unlocked' => $cosmetic->pivot->unlocked ?? false,
+                    'cosmetic_type' => [
+                        'id' => $cosmetic->cosmeticType->id,
+                        'name' => $cosmetic->cosmeticType->name,
+                    ],
+                ];
+            }),
+        ]);
+    }
 }

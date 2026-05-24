@@ -31,6 +31,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Profile API route
+    Route::get('/api/profile', [UserController::class, 'profileApi'])->name('api.profile');
+
     // Deck API routes
     Route::get('/api/decks', [DeckController::class, 'index'])->name('decks.index');
     Route::post('/api/decks', [DeckController::class, 'store'])->name('decks.store');
