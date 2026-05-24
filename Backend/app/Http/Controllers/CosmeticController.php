@@ -4,10 +4,58 @@ namespace App\Http\Controllers;
 
 use App\Models\Cosmetic;
 use App\Models\CosmeticType;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CosmeticController extends Controller
 {
+    /**
+     * API: Get all cosmetics with their types for the frontend.
+     */
+    public function indexApi(): JsonResponse
+    {
+        $cosmetics = Cosmetic::with('cosmeticType')
+            ->get()
+            ->map(fn ($cosmetic) => [
+                'id' => $cosmetic->id,
+                'name' => $cosmetic->name,
+                'type' => $cosmetic->cosmeticType->name ?? null,
+                'experience_unlock' => $cosmetic->experience_unlock,
+                'credits_unlock' => $cosmetic->credits_unlock,
+            ]);
+
+        return response()->json($cosmetics);
+    }
+
+    /**
+     * API: Get the authenticated user's cosmetics with unlock status.
+     */
+    public function userCosmetics(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $allCosmetics = Cosmetic::with('cosmeticType')->get();
+        $userCosmeticIds = $user->cosmetics()->pluck('cosmetics.id')->toArray();
+
+        $cosmetics = $allCosmetics->map(fn ($cosmetic) => [
+            'id' => $cosmetic->id,
+            'name' => $cosmetic->name,
+            'type' => $cosmetic->cosmeticType->name ?? null,
+            'experience_unlock' => $cosmetic->experience_unlock,
+            'credits_unlock' => $cosmetic->credits_unlock,
+            'unlocked' => in_array($cosmetic->id, $userCosmeticIds),
+        ]);
+
+        return response()->json([
+            'cosmetics' => $cosmetics,
+            'stats' => [
+                'experience_points' => $user->experience_points,
+                'credits' => $user->credits,
+                'rank_score' => $user->rank_score,
+            ],
+        ]);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -35,7 +83,7 @@ class CosmeticController extends Controller
             'name' => 'required|string|max:255',
             'cosmetic_type_id' => 'required|exists:cosmetic_types,id',
             'experience_unlock' => 'nullable|integer|min:0',
-            'currency_a_unlock' => 'nullable|integer|min:0',
+            'credits_unlock' => 'nullable|integer|min:0',
         ]);
 
         Cosmetic::create($validated);
@@ -71,7 +119,7 @@ class CosmeticController extends Controller
             'name' => 'required|string|max:255',
             'cosmetic_type_id' => 'required|exists:cosmetic_types,id',
             'experience_unlock' => 'nullable|integer|min:0',
-            'currency_a_unlock' => 'nullable|integer|min:0',
+            'credits_unlock' => 'nullable|integer|min:0',
         ]);
 
         $cosmetic->update($validated);

@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             DefaultCosmeticsSeeder::class,
             CardSeeder::class,
             UserSeeder::class,
+            DeckSeeder::class,
             GameLogSeeder::class,
         ]);
     }

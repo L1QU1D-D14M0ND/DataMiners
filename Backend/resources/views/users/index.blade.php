@@ -18,9 +18,6 @@
         <div class="col-md-6">
             <h1 class="text-center">Users</h1>
         </div>
-        <div class="col-md-6 text-end">
-            <a href="{{ route('users.create') }}" class="btn btn-custom-success">+ Create User</a>
-        </div>
     </div>
 
     @if ($message = Session::get('success'))
@@ -57,11 +54,6 @@
                         <div class="card-footer bg-white border-top" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <a href="{{ route('users.show', $user) }}" class="btn btn-sm btn-custom-info">View</a>
                             <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-custom-warning">Edit</a>
-                            <form action="{{ route('users.destroy', $user) }}" method="POST" style="display: inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-custom-danger" onclick="return confirm('Are you sure?')">Delete</button>
-                            </form>
                         </div>
                     </div>
                 </div>

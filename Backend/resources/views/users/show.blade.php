@@ -57,13 +57,5 @@
             </dl>
         </div>
     </div>
-
-    <div class="mt-4">
-        <form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this user?');">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="btn btn-custom-danger">Delete User</button>
-        </form>
-    </div>
 </div>
 @endsection

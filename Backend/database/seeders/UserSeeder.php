@@ -39,14 +39,14 @@ class UserSeeder extends Seeder
 
         // Attach the 8 default cards to the admin's default deck
         $defaultCardNames = [
-            'Advanced CCTV',
-            'Advanced Satellite Deployment',
-            'Encript Communications',
-            'Energy Generation Audit',
-            'Mark Protected Zones',
-            'Orbital Scan',
-            'Prefabricated Wind Turbine',
-            'Supply Package',
+            'Power Surge',
+            'Signal Relay',
+            'Factory Overdrive',
+            'Data Cache',
+            'Reinforced Grid',
+            'Ore Harvest',
+            'Deep Uplink',
+            'System Cooldown',
         ];
 
         $defaultCards = \App\Models\Card::whereIn('name', $defaultCardNames)->get();

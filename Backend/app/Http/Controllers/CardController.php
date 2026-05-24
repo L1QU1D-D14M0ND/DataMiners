@@ -21,7 +21,7 @@ class CardController extends Controller
      */
     public function indexApi()
     {
-        $cards = Card::all();
+        $cards = Card::select('id', 'name', 'experience_unlock', 'credits_unlock')->get();
         return response()->json($cards);
     }
 
@@ -41,7 +41,7 @@ class CardController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:cards',
             'experience_unlock' => 'nullable|integer|min:0',
-            'currency_a_unlock' => 'nullable|integer|min:0',
+            'credits_unlock' => 'nullable|integer|min:0',
         ]);
 
         Card::create($validated);
@@ -74,7 +74,7 @@ class CardController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:cards,name,' . $card->id,
             'experience_unlock' => 'nullable|integer|min:0',
-            'currency_a_unlock' => 'nullable|integer|min:0',
+            'credits_unlock' => 'nullable|integer|min:0',
         ]);
 
         $card->update($validated);
