@@ -83,7 +83,7 @@ class CosmeticController extends Controller
             'name' => 'required|string|max:255',
             'cosmetic_type_id' => 'required|exists:cosmetic_types,id',
             'experience_unlock' => 'nullable|integer|min:0',
-            'currency_a_unlock' => 'nullable|integer|min:0',
+            'credits_unlock' => 'nullable|integer|min:0',
         ]);
 
         Cosmetic::create($validated);
@@ -119,7 +119,7 @@ class CosmeticController extends Controller
             'name' => 'required|string|max:255',
             'cosmetic_type_id' => 'required|exists:cosmetic_types,id',
             'experience_unlock' => 'nullable|integer|min:0',
-            'currency_a_unlock' => 'nullable|integer|min:0',
+            'credits_unlock' => 'nullable|integer|min:0',
         ]);
 
         $cosmetic->update($validated);

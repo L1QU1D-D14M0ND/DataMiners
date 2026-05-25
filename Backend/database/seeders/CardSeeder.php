@@ -22,6 +22,18 @@ class CardSeeder extends Seeder
             'Ore Harvest',
             'Deep Uplink',
             'System Cooldown',
+            'Quantum Processor',
+            'Neural Network',
+            'Cyber Shield',
+            'Energy Core',
+            'Mining Drone',
+            'Data Stream',
+            'Firewall Breach',
+            'Resource Cache',
+            'Tech Upgrade',
+            'Network Boost',
+            'Crystal Extractor',
+            'Digital Fortress',
         ];
 
         foreach ($frontendCards as $card) {
