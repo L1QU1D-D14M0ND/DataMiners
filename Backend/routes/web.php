@@ -7,6 +7,7 @@ use App\Http\Controllers\CardController;
 use App\Http\Controllers\CosmeticController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeckController;
+use App\Http\Controllers\MatchmakingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -43,6 +44,11 @@ Route::middleware('auth')->group(function () {
 
     // User cosmetics API routes
     Route::get('/api/user/cosmetics', [CosmeticController::class, 'userCosmetics'])->name('user.cosmetics');
+
+    // Matchmaking API routes
+    Route::post('/api/matchmaking/join', [MatchmakingController::class, 'joinQueue'])->name('matchmaking.join');
+    Route::post('/api/matchmaking/leave', [MatchmakingController::class, 'leaveQueue'])->name('matchmaking.leave');
+    Route::get('/api/matchmaking/status', [MatchmakingController::class, 'getQueueStatus'])->name('matchmaking.status');
 });
 
 // Public API routes for card data (no authentication required)

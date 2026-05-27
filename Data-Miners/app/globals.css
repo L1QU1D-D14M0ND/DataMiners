@@ -1,0 +1,493 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Arknights War Table Theme - High contrast tactical */
+:root {
+  --background: oklch(0.95 0.01 220);
+  --foreground: oklch(0.1 0.02 220);
+  --card: oklch(0.98 0.005 220);
+  --card-foreground: oklch(0.1 0.02 220);
+  --popover: oklch(0.98 0.005 220);
+  --popover-foreground: oklch(0.1 0.02 220);
+  --primary: oklch(0.95 0.01 220);
+  --primary-foreground: oklch(0.1 0.02 220);
+  --secondary: oklch(0.9 0.02 220);
+  --secondary-foreground: oklch(0.1 0.02 220);
+  --muted: oklch(0.85 0.02 220);
+  --muted-foreground: oklch(0.4 0.02 220);
+  --accent: oklch(0.85 0.02 55);
+  --accent-foreground: oklch(0.1 0.02 55);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.95 0.01 25);
+  --border: oklch(0.8 0.02 220);
+  --input: oklch(0.9 0.02 220);
+  --ring: oklch(0.7 0.1 55);
+  --chart-1: oklch(0.7 0.15 195);
+  --chart-2: oklch(0.6 0.15 145);
+  --chart-3: oklch(0.65 0.18 85);
+  --chart-4: oklch(0.55 0.15 25);
+  --chart-5: oklch(0.6 0.18 280);
+  --radius: 0rem;
+  --sidebar: oklch(0.95 0.005 220);
+  --sidebar-foreground: oklch(0.1 0.02 220);
+  --sidebar-primary: oklch(0.7 0.15 55);
+  --sidebar-primary-foreground: oklch(0.1 0.02 55);
+  --sidebar-accent: oklch(0.9 0.02 220);
+  --sidebar-accent-foreground: oklch(0.1 0.02 220);
+  --sidebar-border: oklch(0.8 0.02 220);
+  --sidebar-ring: oklch(0.7 0.1 55);
+  /* Arknights colors */
+  --ark-black: #0a0a0a;
+  --ark-white: #f5f5f5;
+  --ark-gold: #d4a853;
+  --ark-orange: #ff6b35;
+  --ark-red: #cc3333;
+}
+
+/* Dark mode - Deep black tactical */
+.dark {
+  --background: oklch(0.06 0.01 250);
+  --foreground: oklch(0.95 0.01 220);
+  --card: oklch(0.08 0.01 250);
+  --card-foreground: oklch(0.95 0.01 220);
+  --popover: oklch(0.08 0.01 250);
+  --popover-foreground: oklch(0.95 0.01 220);
+  --primary: oklch(0.95 0.01 220);
+  --primary-foreground: oklch(0.06 0.01 250);
+  --secondary: oklch(0.12 0.01 250);
+  --secondary-foreground: oklch(0.95 0.01 220);
+  --muted: oklch(0.15 0.01 250);
+  --muted-foreground: oklch(0.6 0.01 220);
+  --accent: oklch(0.7 0.15 55);
+  --accent-foreground: oklch(0.1 0.02 55);
+  --destructive: oklch(0.5 0.2 25);
+  --destructive-foreground: oklch(0.95 0.01 25);
+  --border: oklch(0.25 0.02 250);
+  --input: oklch(0.12 0.01 250);
+  --ring: oklch(0.7 0.15 55);
+  --sidebar: oklch(0.08 0.01 250);
+  --sidebar-foreground: oklch(0.95 0.01 220);
+  --sidebar-primary: oklch(0.7 0.15 55);
+  --sidebar-primary-foreground: oklch(0.1 0.02 55);
+  --sidebar-accent: oklch(0.12 0.01 250);
+  --sidebar-accent-foreground: oklch(0.95 0.01 220);
+  --sidebar-border: oklch(0.25 0.02 250);
+  --sidebar-ring: oklch(0.7 0.15 55);
+}
+
+@theme inline {
+  --font-sans: "Exo 2", system-ui, sans-serif;
+  --font-mono: "Share Tech Mono", "Fira Code", monospace;
+  --font-heading: "Orbitron", "Exo 2", sans-serif;
+  --font-serif: "Crimson Pro", Georgia, serif;
+  /* Custom breakpoint for extra small devices */
+  --breakpoint-xs: 480px;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Pixel art rendering */
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Arknights-style skewed panels (skew removed) */
+/* .ark-skew { transform: skewX(-3deg); } */
+/* .ark-skew-content { transform: skewX(3deg); } */
+
+/* Tactical file card with corner cut */
+.ark-card {
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  position: relative;
+}
+
+.ark-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 17px;
+  height: 17px;
+  background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.1) 50%);
+  pointer-events: none;
+}
+
+/* Floppy disk style card */
+.ark-floppy {
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+
+/* Top bar skewed style (skew removed) */
+.ark-topbar {
+  background: rgba(10, 10, 10, 0.98);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+/* .ark-topbar-content { transform: skewX(2deg); } */
+
+/* Slide-in animation from edges */
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-top {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slide-in-left {
+  animation: slide-in-left 0.3s ease-out forwards;
+}
+
+.slide-in-right {
+  animation: slide-in-right 0.3s ease-out forwards;
+}
+
+.slide-in-top {
+  animation: slide-in-top 0.3s ease-out forwards;
+}
+
+/* High contrast button */
+.ark-button {
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.15s ease;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+
+.ark-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.ark-button.selected {
+  background: rgba(255, 255, 255, 0.95);
+  color: rgba(10, 10, 10, 0.95);
+  border-color: rgba(255, 255, 255, 1);
+}
+
+/* Gold accent button */
+.ark-button-gold {
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid rgba(212, 168, 83, 0.5);
+  color: #d4a853;
+}
+
+.ark-button-gold:hover {
+  background: rgba(212, 168, 83, 0.15);
+  border-color: #d4a853;
+}
+
+/* Danger button */
+.ark-button-danger {
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid rgba(204, 51, 51, 0.5);
+  color: #cc3333;
+}
+
+.ark-button-danger:hover {
+  background: rgba(204, 51, 51, 0.15);
+  border-color: #cc3333;
+}
+
+/* Resource divider */
+.ark-divider {
+  width: 1px;
+  height: 24px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+/* Scanline overlay */
+@keyframes scanline-scroll {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 100px;
+  }
+}
+
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 2px,
+    rgba(0, 0, 0, 0.1) 4px
+  );
+  background-size: 100% 4px;
+  animation: scanline-scroll 10s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Status indicators */
+.status-online {
+  background: #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.8);
+}
+
+.status-warning {
+  background: #d4a853;
+  box-shadow: 0 0 8px rgba(212, 168, 83, 0.8);
+}
+
+.status-danger {
+  background: #cc3333;
+  box-shadow: 0 0 8px rgba(204, 51, 51, 0.8);
+}
+
+/* Tactical pulse */
+@keyframes tactical-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.pulse-tactical {
+  animation: tactical-pulse 1.5s ease-in-out infinite;
+}
+
+/* Rotating reticle */
+@keyframes reticle-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.reticle-spin {
+  animation: reticle-rotate 20s linear infinite;
+}
+
+.reticle-spin-reverse {
+  animation: reticle-rotate 15s linear infinite reverse;
+}
+
+/* Data stream */
+@keyframes data-stream {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.5;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+.data-stream {
+  animation: data-stream 4s linear infinite;
+}
+
+.data-stream-delayed {
+  animation: data-stream 4s linear infinite;
+  animation-delay: 2s;
+}
+
+/* Corner decorations */
+@keyframes corner-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.corner-decoration {
+  animation: corner-pulse 3s ease-in-out infinite;
+}
+
+/* Border pulse */
+@keyframes border-pulse {
+  0%,
+  100% {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+}
+
+.border-pulse {
+  animation: border-pulse 3s ease-in-out infinite;
+}
+
+/* Font utilities */
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Text glow */
+.text-glow-gold {
+  text-shadow: 0 0 10px rgba(212, 168, 83, 0.5);
+}
+
+.text-glow-white {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* Range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #d4a853;
+  margin-top: -5px;
+  cursor: pointer;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #d4a853;
+  cursor: pointer;
+  border: none;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+/* Hide scrollbar but keep scrollability */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Barcode pattern */
+.barcode {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.6) 0px,
+    rgba(255, 255, 255, 0.6) 1px,
+    transparent 1px,
+    transparent 3px,
+    rgba(255, 255, 255, 0.6) 3px,
+    rgba(255, 255, 255, 0.6) 5px,
+    transparent 5px,
+    transparent 6px,
+    rgba(255, 255, 255, 0.6) 6px,
+    rgba(255, 255, 255, 0.6) 7px,
+    transparent 7px,
+    transparent 10px
+  );
+}

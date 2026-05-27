@@ -1,0 +1,6 @@
+export * from "./tile-definition"
+export * from "./tile-registry"
+export { GrassTile } from "./grass"
+export { RockTile } from "./rock"
+export { WaterTile } from "./water"
+export { SandTile } from "./sand"
