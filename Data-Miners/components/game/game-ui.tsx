@@ -1,7 +1,15 @@
 "use client"
 
-import { useState, useEffect, memo } from "react"
-import type { GameState, GameSettings, SelectedTool } from "@/lib/game/types"
+import { useState, useEffect, memo, useCallback, useRef } from "react"
+import type {
+  GameState,
+  GameSettings,
+  MatchResult,
+  MatchResultOutcome,
+  MatchReward,
+  MatchStats,
+  SelectedTool,
+} from "@/lib/game/types"
 import { BuildingRegistry, type BuildingDefinition } from "@/lib/game/buildings"
 import { getCardIcon } from "@/lib/game/icons"
 import { TechTreeModal } from "./tech-tree-modal"
@@ -10,7 +18,8 @@ import { SoundManager } from "@/lib/game/sound-manager"
 import { SettingsModal } from "./settings-modal"
 import { DataProgressBar } from "./data-progress-bar"
 import { TopBar } from "./top-bar"
-import { Trash2, ZoomIn, ZoomOut, Maximize2 } from "lucide-react"
+import axios from "@/lib/axios"
+import { Clock, Coins, Home, Maximize2, Signal, Star, Trophy, Trash2, Zap, ZoomIn, ZoomOut } from "lucide-react"
 
 interface GameUIProps {
   gameState: GameState
@@ -21,6 +30,46 @@ interface GameUIProps {
   onReturnToMenu?: () => void
   deckIds?: string[]
 }
+
+const WIN_REWARD: MatchReward = {
+  experience: 50,
+  credits: 100,
+  rankScore: 5,
+}
+
+type MatchResultEventDetail = Partial<Omit<MatchResult, "playerStats" | "reward">> & {
+  downloadSpeed?: number
+  playerStats?: Partial<MatchStats>
+  reward?: Partial<MatchReward>
+}
+
+type RewardResponse = {
+  reward?: {
+    experience?: number
+    credits?: number
+    rank_score?: number
+    rankScore?: number
+  }
+}
+
+const getRewardForOutcome = (outcome: MatchResultOutcome): MatchReward => {
+  const multiplier = outcome === "win" ? 1 : 0.5
+
+  return {
+    experience: Math.floor(WIN_REWARD.experience * multiplier),
+    credits: Math.floor(WIN_REWARD.credits * multiplier),
+    rankScore: Math.floor(WIN_REWARD.rankScore * multiplier),
+  }
+}
+
+const formatDuration = (totalSeconds: number) => {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`
+}
+
+const formatNumber = (value: number) => new Intl.NumberFormat().format(value)
 
 
 function FloppyToolButton({
@@ -79,6 +128,28 @@ function FloppyToolButton({
 
 const FloppyToolButtonMemo = memo(FloppyToolButton)
 
+function ResultStat({
+  icon,
+  label,
+  value,
+  muted = false,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string
+  muted?: boolean
+}) {
+  return (
+    <div className={`bg-black/30 border p-3 ${muted ? "border-white/10" : "border-white/15"}`}>
+      <div className={`flex items-center gap-2 mb-2 ${muted ? "text-white/25" : "text-[#d4a853]"}`}>
+        {icon}
+        <span className="font-heading text-[10px] tracking-wider">{label}</span>
+      </div>
+      <div className={`font-mono text-sm ${muted ? "text-white/35" : "text-white/90"}`}>{value}</div>
+    </div>
+  )
+}
+
 export function GameUI({
   gameState,
   settings,
@@ -92,8 +163,46 @@ export function GameUI({
   const [showTechTree, setShowTechTree] = useState(false)
   const [placeableBuildings, setPlaceableBuildings] = useState<BuildingDefinition[]>([])
   const [zoomLevel, setZoomLevel] = useState({ zoom: 1, min: 0.5, max: 2 })
-  const [showWinModal, setShowWinModal] = useState(false)
-  const [finalDownloadSpeed, setFinalDownloadSpeed] = useState(0)
+  const [matchResult, setMatchResult] = useState<MatchResult | null>(null)
+  const [rewardStatus, setRewardStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle")
+  const gameStateRef = useRef<GameState | null>(gameState)
+  const matchResultRef = useRef<MatchResult | null>(null)
+
+  useEffect(() => {
+    gameStateRef.current = gameState
+  }, [gameState])
+
+  const persistMatchResult = useCallback(async (result: MatchResult) => {
+    setRewardStatus("saving")
+
+    try {
+      const response = await axios.post<RewardResponse>("/api/game-results", {
+        outcome: result.outcome,
+        stats: {
+          time_elapsed_seconds: result.playerStats.timeElapsedSeconds,
+          energy_generated: result.playerStats.energyGenerated,
+          download_speed: result.playerStats.downloadSpeed,
+        },
+      })
+
+      const backendReward = response.data.reward
+      const syncedReward: MatchReward = {
+        experience: backendReward?.experience ?? result.reward.experience,
+        credits: backendReward?.credits ?? result.reward.credits,
+        rankScore: backendReward?.rankScore ?? backendReward?.rank_score ?? result.reward.rankScore,
+      }
+
+      setMatchResult((currentResult) =>
+        currentResult ? { ...currentResult, reward: syncedReward } : currentResult,
+      )
+      setRewardStatus("saved")
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to persist match result:", error)
+      }
+      setRewardStatus("failed")
+    }
+  }, [])
 
   // Sync sound settings
   useEffect(() => {
@@ -122,20 +231,47 @@ export function GameUI({
     }
     window.addEventListener("zoomLevelUpdate", handleZoomUpdate)
 
-    const handleGameWon = (event: Event) => {
-      const { downloadSpeed } = (event as CustomEvent<{ downloadSpeed: number }>).detail
-      setFinalDownloadSpeed(downloadSpeed)
-      setShowWinModal(true)
+    const openMatchResult = (event: Event, fallbackOutcome: MatchResultOutcome) => {
+      if (matchResultRef.current) return
+
+      const detail = (event as CustomEvent<MatchResultEventDetail>).detail ?? {}
+      const currentGameState = gameStateRef.current
+      const outcome = detail.outcome ?? fallbackOutcome
+      const reward = {
+        ...getRewardForOutcome(outcome),
+        ...detail.reward,
+      }
+      const playerStats: MatchStats = {
+        timeElapsedSeconds: detail.playerStats?.timeElapsedSeconds ?? currentGameState?.elapsedSeconds ?? 0,
+        energyGenerated: detail.playerStats?.energyGenerated ?? currentGameState?.totalEnergyGenerated ?? 0,
+        downloadSpeed:
+          detail.playerStats?.downloadSpeed ?? detail.downloadSpeed ?? currentGameState?.downloadSpeed ?? 0,
+      }
+      const result: MatchResult = {
+        outcome,
+        playerStats,
+        rivalStats: detail.rivalStats ?? null,
+        reward,
+      }
+
+      matchResultRef.current = result
+      setMatchResult(result)
       SoundManager.playUnlock()
+      persistMatchResult(result)
     }
+
+    const handleGameWon = (event: Event) => openMatchResult(event, "win")
+    const handleGameLost = (event: Event) => openMatchResult(event, "loss")
     window.addEventListener("gameWon", handleGameWon)
+    window.addEventListener("gameLost", handleGameLost)
 
     return () => {
       window.removeEventListener("buildingRegistryChange", handleRegistryChange)
       window.removeEventListener("zoomLevelUpdate", handleZoomUpdate)
       window.removeEventListener("gameWon", handleGameWon)
+      window.removeEventListener("gameLost", handleGameLost)
     }
-  }, [])
+  }, [persistMatchResult])
 
 
   const handleToolSelect = (tool: SelectedTool) => {
@@ -258,24 +394,114 @@ export function GameUI({
         onUnlock={handleTechUnlock}
       />
 
-      {/* Win Modal */}
-      {showWinModal && (
+      {/* Match Result Modal */}
+      {matchResult && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 pointer-events-auto z-50">
-          <div className="ark-card scanlines p-8 max-w-md text-center">
-            <div className="text-[#d4a853] text-4xl font-heading mb-4">VICTORY</div>
-            <div className="text-white/80 text-sm mb-6">
-              You have successfully established a download speed of {finalDownloadSpeed} MB/s from the Alien Monolith!
+          <div className="ark-card scanlines w-[min(92vw,760px)] max-h-[90vh] overflow-y-auto p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 border-b border-white/10 pb-4">
+              <div>
+                <div className="text-[#d4a853] text-3xl sm:text-4xl font-heading tracking-wider">
+                  {matchResult.outcome === "win" ? "VICTORY" : "DEFEAT"}
+                </div>
+                <div className="text-white/60 text-xs sm:text-sm mt-1">
+                  {matchResult.outcome === "win"
+                    ? "Alien data secured and uploaded to your network."
+                    : "Operation ended. Partial compensation has been credited."}
+                </div>
+              </div>
+              <div className="font-mono text-[10px] text-white/40 sm:text-right">
+                {rewardStatus === "saving" && "SYNCING REWARDS"}
+                {rewardStatus === "saved" && "REWARDS APPLIED"}
+                {rewardStatus === "failed" && "REWARD SYNC FAILED"}
+                {rewardStatus === "idle" && "RESULT READY"}
+              </div>
             </div>
-            <div className="text-white/60 text-xs mb-6">
-              The alien data has been secured and uploaded to your network.
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 py-5">
+              <div className="border border-white/10 bg-black/20 p-4">
+                <div className="font-heading text-xs tracking-wider text-white/80 mb-3">YOUR OPERATION</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <ResultStat
+                    icon={<Clock className="w-4 h-4" />}
+                    label="TIME"
+                    value={formatDuration(matchResult.playerStats.timeElapsedSeconds)}
+                  />
+                  <ResultStat
+                    icon={<Zap className="w-4 h-4" />}
+                    label="ENERGY"
+                    value={formatNumber(matchResult.playerStats.energyGenerated)}
+                  />
+                  <ResultStat
+                    icon={<Signal className="w-4 h-4" />}
+                    label="DOWNLOAD"
+                    value={`${matchResult.playerStats.downloadSpeed} MB/s`}
+                  />
+                  <ResultStat
+                    icon={<Trophy className="w-4 h-4" />}
+                    label="RESULT"
+                    value={matchResult.outcome === "win" ? "WIN" : "LOSS"}
+                  />
+                </div>
+              </div>
+
+              <div className="border border-white/10 bg-black/20 p-4">
+                <div className="font-heading text-xs tracking-wider text-white/80 mb-3">RIVAL OPERATION</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <ResultStat
+                    icon={<Clock className="w-4 h-4" />}
+                    label="TIME"
+                    value={
+                      matchResult.rivalStats ? formatDuration(matchResult.rivalStats.timeElapsedSeconds) : "--:--"
+                    }
+                    muted={!matchResult.rivalStats}
+                  />
+                  <ResultStat
+                    icon={<Zap className="w-4 h-4" />}
+                    label="ENERGY"
+                    value={matchResult.rivalStats ? formatNumber(matchResult.rivalStats.energyGenerated) : "--"}
+                    muted={!matchResult.rivalStats}
+                  />
+                  <ResultStat
+                    icon={<Signal className="w-4 h-4" />}
+                    label="DOWNLOAD"
+                    value={matchResult.rivalStats ? `${matchResult.rivalStats.downloadSpeed} MB/s` : "-- MB/s"}
+                    muted={!matchResult.rivalStats}
+                  />
+                  <ResultStat icon={<Trophy className="w-4 h-4" />} label="RESULT" value="PENDING" muted />
+                </div>
+              </div>
             </div>
+
+            <div className="border border-[#d4a853]/25 bg-[#d4a853]/5 p-4 mb-5">
+              <div className="font-heading text-xs tracking-wider text-[#d4a853] mb-3">REWARDS</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <ResultStat
+                  icon={<Star className="w-4 h-4" />}
+                  label="EXPERIENCE"
+                  value={`+${matchResult.reward.experience}`}
+                />
+                <ResultStat
+                  icon={<Coins className="w-4 h-4" />}
+                  label="CREDITS"
+                  value={`+${matchResult.reward.credits}`}
+                />
+                <ResultStat
+                  icon={<Trophy className="w-4 h-4" />}
+                  label="RANK SCORE"
+                  value={`+${matchResult.reward.rankScore}`}
+                />
+              </div>
+            </div>
+
             <button
               onClick={() => {
-                setShowWinModal(false)
+                setMatchResult(null)
+                matchResultRef.current = null
                 onReturnToMenu?.()
               }}
-              className="ark-button-gold w-full"
+              className="ark-button-gold w-full flex items-center justify-center gap-2"
             >
+              <Home className="w-4 h-4" />
               RETURN TO MENU
             </button>
           </div>

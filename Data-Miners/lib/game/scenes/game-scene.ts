@@ -1,5 +1,5 @@
 import * as Phaser from "phaser"
-import type { TileData, Building, GameState, TerrainType, BuildingType, SelectedTool } from "../types"
+import type { TileData, Building, GameState, MatchStats, TerrainType, BuildingType, SelectedTool } from "../types"
 import { getConnectedBuildings } from "../pathfinding"
 import { BuildingRegistry } from "../buildings"
 import { TileRegistry } from "../tiles"
@@ -47,6 +47,7 @@ export class GameScene extends Phaser.Scene {
   private cleanupCallbacks: Array<() => void> = []
   private cleanupComplete = false
   private gameWon = false
+  private totalEnergyGenerated = 0
 
   constructor() {
     super({ key: "GameScene" })
@@ -786,6 +787,7 @@ export class GameScene extends Phaser.Scene {
     this.resources.energy = Math.floor(
       Math.max(0, Math.min(this.resources.maxEnergy, this.resources.energy + netPower)),
     )
+    this.totalEnergyGenerated += Math.max(0, generation)
 
     // Cache for emitGameState
     this.cachedEnergyStats = { generation, consumption, lineLoss, materialsPerTick, connectedCount }
@@ -812,7 +814,24 @@ export class GameScene extends Phaser.Scene {
     const downloadSpeed = this.calculateDownloadSpeed()
     if (downloadSpeed >= WIN_DOWNLOAD_SPEED_THRESHOLD) {
       this.gameWon = true
-      window.dispatchEvent(new CustomEvent("gameWon", { detail: { downloadSpeed } }))
+      this.inputBlocked = true
+      window.dispatchEvent(
+        new CustomEvent("gameWon", {
+          detail: {
+            outcome: "win",
+            playerStats: this.getPlayerMatchStats(downloadSpeed),
+            rivalStats: null,
+          },
+        }),
+      )
+    }
+  }
+
+  private getPlayerMatchStats(downloadSpeed = this.calculateDownloadSpeed()): MatchStats {
+    return {
+      timeElapsedSeconds: Math.floor(this.tick * TICK_INTERVAL / 1000),
+      energyGenerated: this.totalEnergyGenerated,
+      downloadSpeed,
     }
   }
 
@@ -833,6 +852,8 @@ export class GameScene extends Phaser.Scene {
       buildings: Array.from(this.buildings.values()),
       materialsPerTick,
       downloadSpeed,
+      elapsedSeconds: Math.floor(this.tick * TICK_INTERVAL / 1000),
+      totalEnergyGenerated: this.totalEnergyGenerated,
       gameWon: this.gameWon,
     }
 

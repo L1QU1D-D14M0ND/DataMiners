@@ -54,7 +54,30 @@ export interface GameState {
   buildings: Building[]
   materialsPerTick: number
   downloadSpeed: number
+  elapsedSeconds: number
+  totalEnergyGenerated: number
   gameWon: boolean
+}
+
+export type MatchResultOutcome = "win" | "loss"
+
+export interface MatchReward {
+  experience: number
+  credits: number
+  rankScore: number
+}
+
+export interface MatchStats {
+  timeElapsedSeconds: number
+  energyGenerated: number
+  downloadSpeed: number
+}
+
+export interface MatchResult {
+  outcome: MatchResultOutcome
+  playerStats: MatchStats
+  rivalStats: MatchStats | null
+  reward: MatchReward
 }
 
 export type SelectedTool = BuildingType | "delete" | null

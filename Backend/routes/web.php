@@ -7,6 +7,7 @@ use App\Http\Controllers\CardController;
 use App\Http\Controllers\CosmeticController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeckController;
+use App\Http\Controllers\GameResultController;
 use App\Http\Controllers\MatchmakingController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,9 @@ Route::middleware('auth')->group(function () {
 
     // Profile API route
     Route::get('/api/profile', [UserController::class, 'profileApi'])->name('api.profile');
+
+    // Game result API route
+    Route::post('/api/game-results', [GameResultController::class, 'store'])->name('game-results.store');
 
     // Deck API routes
     Route::get('/api/decks', [DeckController::class, 'index'])->name('decks.index');
