@@ -18,8 +18,10 @@ import { SoundManager } from "@/lib/game/sound-manager"
 import { SettingsModal } from "./settings-modal"
 import { DataProgressBar } from "./data-progress-bar"
 import { TopBar } from "./top-bar"
+import { CardNotificationContainer } from "./card-notification"
 import axios from "@/lib/axios"
-import { Clock, Coins, Home, Maximize2, Signal, Star, Trophy, Trash2, Zap, ZoomIn, ZoomOut } from "lucide-react"
+import { getWebSocketClient, type GameStateUpdate, type CardUsageEvent, type MatchEndedEvent } from "@/lib/websocket-client"
+import { Clock, Coins, Home, Maximize2, Signal, Star, Trophy, Trash2, Zap, ZoomIn, ZoomOut, AlertTriangle } from "lucide-react"
 
 interface GameUIProps {
   gameState: GameState
@@ -29,6 +31,7 @@ interface GameUIProps {
   onToolChange: (tool: SelectedTool) => void
   onReturnToMenu?: () => void
   deckIds?: string[]
+  matchId?: string
 }
 
 const WIN_REWARD: MatchReward = {
@@ -110,18 +113,6 @@ function FloppyToolButton({
       <span className={`absolute bottom-1 text-[7px] font-mono ${selected ? "text-black/40" : "text-white/30"}`}>
         [{shortcut}]
       </span>
-      {level !== undefined && maxLevel !== undefined && (
-        <div className="absolute top-1 right-1 flex gap-0.5">
-          {Array.from({ length: maxLevel }).map((_, i) => (
-            <div
-              key={i}
-              className={`w-1 h-1 ${
-                i < level ? (selected ? "bg-black" : "bg-[#d4a853]") : selected ? "bg-black/20" : "bg-white/20"
-              }`}
-            />
-          ))}
-        </div>
-      )}
     </button>
   )
 }
@@ -158,6 +149,7 @@ export function GameUI({
   onToolChange,
   onReturnToMenu,
   deckIds,
+  matchId,
 }: GameUIProps) {
   const [showSettings, setShowSettings] = useState(false)
   const [showTechTree, setShowTechTree] = useState(false)
@@ -165,6 +157,8 @@ export function GameUI({
   const [zoomLevel, setZoomLevel] = useState({ zoom: 1, min: 0.5, max: 2 })
   const [matchResult, setMatchResult] = useState<MatchResult | null>(null)
   const [rewardStatus, setRewardStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle")
+  const [showExitWarning, setShowExitWarning] = useState(false)
+  const [isConceding, setIsConceding] = useState(false)
   const gameStateRef = useRef<GameState | null>(gameState)
   const matchResultRef = useRef<MatchResult | null>(null)
 
@@ -204,6 +198,30 @@ export function GameUI({
     }
   }, [])
 
+  const handleConcede = useCallback(async () => {
+    if (!matchId) return
+
+    setIsConceding(true)
+    try {
+      await axios.post(`/api/game-sessions/${matchId}/concede`)
+      SoundManager.playClick()
+      onReturnToMenu?.()
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to concede match:", error)
+      }
+      setIsConceding(false)
+    }
+  }, [matchId, onReturnToMenu])
+
+  const handleReturnToMenuWithWarning = useCallback(() => {
+    if (matchId) {
+      setShowExitWarning(true)
+    } else {
+      onReturnToMenu?.()
+    }
+  }, [matchId, onReturnToMenu])
+
   // Sync sound settings
   useEffect(() => {
     SoundManager.setVolume(settings.volume)
@@ -230,6 +248,40 @@ export function GameUI({
       setZoomLevel((event as CustomEvent<{ zoom: number; min: number; max: number }>).detail)
     }
     window.addEventListener("zoomLevelUpdate", handleZoomUpdate)
+
+    // Listen for match ended event from WebSocket
+    const wsClient = getWebSocketClient()
+    const handleMatchEnded = (data: MatchEndedEvent) => {
+      if (matchResultRef.current) return
+
+      // Get current user ID from localStorage
+      const userData = localStorage.getItem('user')
+      if (!userData) return
+
+      const user = JSON.parse(userData)
+      const isLoser = user.id === data.loserId
+
+      if (isLoser && matchId === data.matchId) {
+        const currentGameState = gameStateRef.current
+        const result: MatchResult = {
+          outcome: "loss",
+          playerStats: {
+            timeElapsedSeconds: currentGameState?.elapsedSeconds ?? 0,
+            energyGenerated: currentGameState?.totalEnergyGenerated ?? 0,
+            downloadSpeed: currentGameState?.downloadSpeed ?? 0,
+          },
+          rivalStats: null,
+          reward: getRewardForOutcome("loss"),
+        }
+
+        matchResultRef.current = result
+        setMatchResult(result)
+        SoundManager.playUnlock()
+        persistMatchResult(result)
+      }
+    }
+
+    const unsubscribeMatchEnded = wsClient.onMatchEnded(handleMatchEnded)
 
     const openMatchResult = (event: Event, fallbackOutcome: MatchResultOutcome) => {
       if (matchResultRef.current) return
@@ -270,8 +322,57 @@ export function GameUI({
       window.removeEventListener("zoomLevelUpdate", handleZoomUpdate)
       window.removeEventListener("gameWon", handleGameWon)
       window.removeEventListener("gameLost", handleGameLost)
+      unsubscribeMatchEnded()
     }
   }, [persistMatchResult])
+
+  // WebSocket integration for PvP
+  useEffect(() => {
+    if (!matchId) return
+
+    const wsClient = getWebSocketClient()
+
+    // Get auth token from localStorage or axios
+    const token = localStorage.getItem('token') || ''
+
+    // Connect to WebSocket
+    wsClient.connect(token)
+
+    // Join the match channel
+    wsClient.joinMatch(matchId)
+
+    // Set matchId in game scene
+    window.dispatchEvent(new CustomEvent('setMatchId', {
+      detail: { matchId }
+    }))
+
+    // Listen for game state changes from opponent
+    const unsubscribeGameState = wsClient.onGameStateChange((data: GameStateUpdate) => {
+      // Update opponent state in game state
+      window.dispatchEvent(new CustomEvent('opponentStateUpdate', {
+        detail: {
+          downloadSpeed: data.downloadSpeed,
+          energyGenerated: data.energyGenerated,
+          updatedAt: data.timestamp,
+        }
+      }))
+    })
+
+    // Listen for card usage from opponent
+    const unsubscribeCardUsed = wsClient.onCardUsed((data: CardUsageEvent) => {
+      // Dispatch event for notification
+      window.dispatchEvent(new CustomEvent('opponentCardUsed', {
+        detail: data
+      }))
+    })
+
+    return () => {
+      unsubscribeGameState()
+      unsubscribeCardUsed()
+      wsClient.leaveMatch()
+      // Don't disconnect here as other components might be using it
+    }
+  }, [matchId])
 
 
   const handleToolSelect = (tool: SelectedTool) => {
@@ -297,6 +398,7 @@ export function GameUI({
 
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col">
+      <CardNotificationContainer />
       <TopBar gameState={gameState} onShowTechTree={() => setShowTechTree(true)} onShowSettings={() => setShowSettings(true)} />
 
       {/* Middle section with sidebars */}
@@ -384,6 +486,7 @@ export function GameUI({
         settings={settings}
         onSettingsChange={onSettingsChange}
         onReturnToMenu={onReturnToMenu}
+        onReturnToMenuWithWarning={handleReturnToMenuWithWarning}
       />
 
       {/* Tech Tree Modal */}
@@ -393,6 +496,46 @@ export function GameUI({
         currentData={gameState.resources.dataUploaded}
         onUnlock={handleTechUnlock}
       />
+
+      {/* Exit Warning Modal */}
+      {showExitWarning && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 pointer-events-auto z-50">
+          <div className="ark-card scanlines w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-400" />
+              <h2 className="font-heading text-lg text-white tracking-wider">ABANDON MATCH?</h2>
+            </div>
+            <p className="text-white/70 text-sm mb-6">
+              You are currently in a PvP match. Leaving now will count as a concession and you will lose the match.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowExitWarning(false)}
+                className="flex-1 ark-button p-3 text-sm font-heading tracking-wider"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleConcede}
+                disabled={isConceding}
+                className="flex-1 ark-button-danger p-3 text-sm font-heading tracking-wider flex items-center justify-center gap-2"
+              >
+                {isConceding ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>CONCEDING...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>CONCEDE</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Match Result Modal */}
       {matchResult && (

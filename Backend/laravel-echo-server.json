@@ -1,0 +1,38 @@
+{
+	"authHost": "http://localhost",
+	"authEndpoint": "/broadcasting/auth",
+	"clients": [
+		{
+			"appId": "data-miners",
+			"key": "data-miners-key"
+		}
+	],
+	"database": "redis",
+	"databaseConfig": {
+		"redis": {
+			"host": "127.0.0.1",
+			"port": 6379,
+			"password": null
+		}
+	},
+	"devMode": true,
+	"host": "127.0.0.1",
+	"port": 6001,
+	"protocol": "http",
+	"socketio": {},
+	"secureOptions": 67108864,
+	"sslCertPath": "",
+	"sslKeyPath": "",
+	"sslCertChainPath": "",
+	"sslPassphrase": "",
+	"subscribers": {
+		"http": true,
+		"redis": true
+	},
+	"apiOriginAllow": {
+		"allowCors": true,
+		"allowOrigins": "http://localhost:3000",
+		"allowMethods": "GET, POST",
+		"allowHeaders": "Origin, Content-Type, X-Auth-Token, X-Requested-With, Accept, Authorization, X-CSRF-TOKEN, X-Socket-Id"
+	}
+}

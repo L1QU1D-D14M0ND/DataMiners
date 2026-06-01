@@ -74,9 +74,86 @@ class UserSeeder extends Seeder
             }
         }
 
-        // Create 99 regular player users
-        User::factory()->count(99)->create();
+        // Create 2 test users with player roles
+        $playerRole = Role::where('name', 'Player')->first();
 
-        $this->command->info('100 users created successfully.');
+        $testUser1 = User::create([
+            'name' => 'TestPlayer1',
+            'email' => 'player1@test.local',
+            'password' => bcrypt('password123'),
+            'role_id' => $playerRole?->id,
+            'rank_score' => 1000,
+            'experience_points' => 500,
+            'credits' => 1000,
+        ]);
+
+        // Create default deck for test user 1
+        $testUser1->decks()->create([
+            'deck_name' => 'Default',
+        ]);
+
+        // Create default set for test user 1
+        $testUser1->sets()->create([
+            'set_name' => 'Default',
+        ]);
+
+        // Attach the 8 default cards to test user 1's default deck
+        if ($defaultCards->count() > 0) {
+            foreach ($defaultCards as $card) {
+                DB::table('deck_card')->insert([
+                    'decks_deck_id' => $testUser1->decks()->first()->id,
+                    'cards_card_id' => $card->id,
+                ]);
+            }
+        }
+
+        // Attach default cosmetics for test user 1
+        if ($defaultCosmetics->count() > 0) {
+            foreach ($defaultCosmetics as $cosmeticId) {
+                $testUser1->cosmetics()->attach($cosmeticId, ['unlocked' => true]);
+            }
+        }
+
+        $testUser2 = User::create([
+            'name' => 'TestPlayer2',
+            'email' => 'player2@test.local',
+            'password' => bcrypt('password123'),
+            'role_id' => $playerRole?->id,
+            'rank_score' => 1000,
+            'experience_points' => 500,
+            'credits' => 1000,
+        ]);
+
+        // Create default deck for test user 2
+        $testUser2->decks()->create([
+            'deck_name' => 'Default',
+        ]);
+
+        // Create default set for test user 2
+        $testUser2->sets()->create([
+            'set_name' => 'Default',
+        ]);
+
+        // Attach the 8 default cards to test user 2's default deck
+        if ($defaultCards->count() > 0) {
+            foreach ($defaultCards as $card) {
+                DB::table('deck_card')->insert([
+                    'decks_deck_id' => $testUser2->decks()->first()->id,
+                    'cards_card_id' => $card->id,
+                ]);
+            }
+        }
+
+        // Attach default cosmetics for test user 2
+        if ($defaultCosmetics->count() > 0) {
+            foreach ($defaultCosmetics as $cosmeticId) {
+                $testUser2->cosmetics()->attach($cosmeticId, ['unlocked' => true]);
+            }
+        }
+
+        // Create 97 regular player users (99 total - 2 test users - 1 admin)
+        User::factory()->count(97)->create();
+
+        $this->command->info('102 users created successfully.');
     }
 }

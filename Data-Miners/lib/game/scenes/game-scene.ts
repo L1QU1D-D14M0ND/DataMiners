@@ -5,6 +5,7 @@ import { BuildingRegistry } from "../buildings"
 import { TileRegistry } from "../tiles"
 import { TechRegistry } from "../tech"
 import { SoundManager } from "../sound-manager"
+import axios from "@/lib/axios"
 
 const TILE_SIZE = 32
 const GRID_WIDTH = 19
@@ -48,6 +49,8 @@ export class GameScene extends Phaser.Scene {
   private cleanupComplete = false
   private gameWon = false
   private totalEnergyGenerated = 0
+  private matchId: string | null = null
+  private opponentState: { downloadSpeed: number; energyGenerated: number; updatedAt: string } | null = null
 
   constructor() {
     super({ key: "GameScene" })
@@ -327,7 +330,7 @@ export class GameScene extends Phaser.Scene {
 
     if (type !== "monolith") {
       const tileDef = TileRegistry.getTile(tile.terrainType)
-      if (type !== "generator" && type !== "drill" && !tileDef?.stats.buildable) return false
+      if (type !== "generator" && type !== "drill" && type !== "uplink" && !tileDef?.stats.buildable) return false
 
       if (!definition.stats.allowedTerrain.includes(tile.terrainType)) {
         return false
@@ -617,6 +620,7 @@ export class GameScene extends Phaser.Scene {
     this.calculateEnergyFlow()
     this.checkWinCondition()
     this.emitGameState()
+    this.updateGameStateToServer() // Broadcast state to opponent in PvP
   }
 
   private refreshBuildingStats() {
@@ -815,6 +819,15 @@ export class GameScene extends Phaser.Scene {
     if (downloadSpeed >= WIN_DOWNLOAD_SPEED_THRESHOLD) {
       this.gameWon = true
       this.inputBlocked = true
+
+      // Report match end to backend if in PvP
+      if (this.matchId) {
+        axios.post(`/api/game-sessions/${this.matchId}/report-end`)
+          .catch((error) => {
+            console.error("Failed to report match end:", error)
+          })
+      }
+
       window.dispatchEvent(
         new CustomEvent("gameWon", {
           detail: {
@@ -855,6 +868,11 @@ export class GameScene extends Phaser.Scene {
       elapsedSeconds: Math.floor(this.tick * TICK_INTERVAL / 1000),
       totalEnergyGenerated: this.totalEnergyGenerated,
       gameWon: this.gameWon,
+      opponentState: this.opponentState ? {
+        downloadSpeed: this.opponentState.downloadSpeed,
+        energyGenerated: this.opponentState.energyGenerated,
+        updatedAt: this.opponentState.updatedAt,
+      } : undefined,
     }
 
     window.dispatchEvent(new CustomEvent("gameStateUpdate", { detail: state }))
@@ -1029,6 +1047,27 @@ export class GameScene extends Phaser.Scene {
       this.emitGameState()
     }
     this.addWindowListener("techUnlocked", handleTechUnlocked)
+
+    const handleSetMatchId = (e: CustomEvent<{ matchId: string }>) => {
+      this.matchId = e.detail.matchId
+    }
+    this.addWindowListener("setMatchId", handleSetMatchId)
+
+    const handleCardUsed = (e: CustomEvent<{ cardId: string; cardName: string }>) => {
+      if (this.matchId) {
+        this.reportCardUsage(e.detail.cardId, e.detail.cardName)
+      }
+    }
+    this.addWindowListener("cardUsed", handleCardUsed)
+
+    const handleOpponentStateUpdate = (e: CustomEvent<{ downloadSpeed: number; energyGenerated: number; updatedAt: string }>) => {
+      this.opponentState = {
+        downloadSpeed: e.detail.downloadSpeed,
+        energyGenerated: e.detail.energyGenerated,
+        updatedAt: e.detail.updatedAt,
+      }
+    }
+    this.addWindowListener("opponentStateUpdate", handleOpponentStateUpdate)
   }
 
   private applyTechBonuses() {
@@ -1095,6 +1134,34 @@ export class GameScene extends Phaser.Scene {
       if (progressBg) {
         progressBg.destroy()
       }
+    }
+  }
+
+  private async updateGameStateToServer() {
+    if (!this.matchId || this.gameWon) return
+
+    const downloadSpeed = this.calculateDownloadSpeed()
+
+    try {
+      await axios.post(`/api/game-sessions/${this.matchId}/state`, {
+        download_speed: downloadSpeed,
+        energy_generated: this.totalEnergyGenerated,
+      })
+    } catch (error) {
+      console.error('Failed to update game state:', error)
+    }
+  }
+
+  private async reportCardUsage(cardId: string, cardName: string) {
+    if (!this.matchId) return
+
+    try {
+      await axios.post(`/api/game-sessions/${this.matchId}/card-used`, {
+        card_id: cardId,
+        card_name: cardName,
+      })
+    } catch (error) {
+      console.error('Failed to report card usage:', error)
     }
   }
 }

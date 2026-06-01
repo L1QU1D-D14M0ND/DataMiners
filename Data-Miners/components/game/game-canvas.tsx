@@ -9,11 +9,12 @@ import type { GameState, GameSettings, SelectedTool } from "@/lib/game/types"
 interface GameCanvasProps {
   onReturnToMenu?: () => void
   deckIds: string[]
+  matchId?: string | null
   settings: GameSettings
   onSettingsChange: (settings: GameSettings) => void
 }
 
-export default function GameCanvas({ onReturnToMenu, deckIds, settings, onSettingsChange }: GameCanvasProps) {
+export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings, onSettingsChange }: GameCanvasProps) {
   const gameRef = useRef<Phaser.Game | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [gameState, setGameState] = useState<GameState | null>(null)
@@ -139,6 +140,7 @@ export default function GameCanvas({ onReturnToMenu, deckIds, settings, onSettin
           onToolChange={setSelectedTool}
           onReturnToMenu={onReturnToMenu}
           deckIds={deckIds}
+          matchId={matchId}
         />
       )}
     </div>

@@ -57,6 +57,13 @@ export interface GameState {
   elapsedSeconds: number
   totalEnergyGenerated: number
   gameWon: boolean
+  opponentState?: OpponentState
+}
+
+export interface OpponentState {
+  downloadSpeed: number
+  energyGenerated: number
+  updatedAt: string
 }
 
 export type MatchResultOutcome = "win" | "loss"

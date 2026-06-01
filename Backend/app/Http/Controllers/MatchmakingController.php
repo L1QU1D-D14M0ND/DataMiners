@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MatchmakingQueue;
-use App\Models\User;
+use App\Models\GameSession;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -87,18 +87,45 @@ class MatchmakingController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        \Log::info("getQueueStatus called for user: {$user->id}");
+
+        // First check for matched queues
+        $matchedQueue = MatchmakingQueue::where('user_id', $user->id)
+            ->where('status', 'matched')
+            ->where('matched_at', '>', now()->subMinutes(5))
+            ->first();
+
+        if ($matchedQueue) {
+            \Log::info("Found matched queue for user: {$user->id}, queue_id: {$matchedQueue->id}");
+            $matchData = Redis::get("match:{$matchedQueue->id}");
+            if ($matchData) {
+                \Log::info("Match data found in Redis for matched queue: {$matchedQueue->id}");
+                $match = json_decode($matchData, true);
+                $this->removeFromRedisQueue($matchedQueue);
+                return response()->json([
+                    'in_queue' => false,
+                    'matched' => true,
+                    'match_data' => $match,
+                ]);
+            }
+        }
+
         $queue = MatchmakingQueue::where('user_id', $user->id)
             ->where('status', 'waiting')
             ->where('expires_at', '>', now())
             ->first();
 
         if (!$queue) {
+            \Log::info("No active queue found for user: {$user->id}");
             return response()->json(['in_queue' => false]);
         }
+
+        \Log::info("Found queue for user: {$user->id}, queue_id: {$queue->id}");
 
         // Check if matched via Redis
         $matchData = Redis::get("match:{$queue->id}");
         if ($matchData) {
+            \Log::info("Match data found in Redis for queue: {$queue->id}");
             $match = json_decode($matchData, true);
             $queue->update(['status' => 'matched', 'matched_at' => now()]);
             $this->removeFromRedisQueue($queue);
@@ -109,6 +136,11 @@ class MatchmakingController extends Controller
                 'match_data' => $match,
             ]);
         }
+
+        \Log::info("No match data in Redis, triggering matchmaking for queue: {$queue->queue_name}");
+
+        // Trigger matchmaking check
+        $this->findMatches($queue->queue_name);
 
         return response()->json([
             'in_queue' => true,
@@ -134,6 +166,8 @@ class MatchmakingController extends Controller
             ->orderBy('skill_rating')
             ->get();
 
+        \Log::info("Finding matches for queue: {$queueName}, found " . $queues->count() . " queues");
+
         $matches = [];
         $processedIds = [];
 
@@ -149,13 +183,27 @@ class MatchmakingController extends Controller
                     && abs($q->skill_rating - $queue->skill_rating) <= $skillRange;
             })->take(1); // 1v1 for now, can be increased
 
+            \Log::info("Queue {$queue->id} (user {$queue->user_id}, skill {$queue->skill_rating}) found " . $opponents->count() . " opponents");
+
             if ($opponents->count() > 0) {
                 $opponent = $opponents->first();
                 $matchId = uniqid('match_');
 
+                \Log::info("Creating match {$matchId} between user {$queue->user_id} and user {$opponent->user_id}");
+
+                // Create game session in database
+                $gameSession = GameSession::create([
+                    'match_id' => $matchId,
+                    'player1_id' => $queue->user_id,
+                    'player2_id' => $opponent->user_id,
+                    'status' => 'active',
+                    'started_at' => now(),
+                ]);
+
                 // Create match data
                 $matchData = [
                     'match_id' => $matchId,
+                    'game_session_id' => $gameSession->id,
                     'queue_name' => $queueName,
                     'players' => [
                         ['user_id' => $queue->user_id, 'skill_rating' => $queue->skill_rating],
@@ -168,6 +216,8 @@ class MatchmakingController extends Controller
                 Redis::setex("match:{$queue->id}", 3600, json_encode($matchData));
                 Redis::setex("match:{$opponent->id}", 3600, json_encode($matchData));
 
+                \Log::info("Stored match data in Redis for queue IDs {$queue->id} and {$opponent->id}");
+
                 // Mark as matched
                 $queue->update(['status' => 'matched', 'matched_at' => now()]);
                 $opponent->update(['status' => 'matched', 'matched_at' => now()]);
@@ -178,6 +228,8 @@ class MatchmakingController extends Controller
                 $matches[] = $matchData;
             }
         }
+
+        \Log::info("Found " . count($matches) . " matches");
 
         return response()->json(['matches' => $matches]);
     }

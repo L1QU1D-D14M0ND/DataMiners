@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useCallback } from "react"
 import { useTheme } from "next-themes"
-import { Play, Settings, Info, X, Volume2, VolumeX, Sun, Moon, ChevronRight, Layers, LogOut, Shield, Zap, User } from "lucide-react"
+import { Play, Settings, Info, X, Volume2, VolumeX, Sun, Moon, ChevronRight, Layers, LogOut, Shield, Zap, User, Users } from "lucide-react"
 import { getCardIcon } from "@/lib/game/icons"
 import type { GameSettings } from "@/lib/game/types"
 import { SoundManager } from "@/lib/game/sound-manager"
@@ -26,6 +26,7 @@ interface UserProfile {
 
 interface MainMenuProps {
   onStartGame: (deckIds: string[]) => void
+  onStartMatchmaking: () => void
   settings: GameSettings
   onSettingsChange: (settings: GameSettings) => void
   onLogout: () => void
@@ -41,7 +42,7 @@ interface UserDeck {
   cardIds: string[]
 }
 
-export function MainMenu({ onStartGame, settings, onSettingsChange, onLogout, user, adminDashboardUrl }: MainMenuProps) {
+export function MainMenu({ onStartGame, onStartMatchmaking, settings, onSettingsChange, onLogout, user, adminDashboardUrl }: MainMenuProps) {
   const [currentScreen, setCurrentScreen] = useState<MenuScreen>("main")
   const [decks, setDecks] = useState<UserDeck[]>([])
   const [equippedDeckId, setEquippedDeckId] = useState<number | null>(null)
@@ -172,6 +173,7 @@ export function MainMenu({ onStartGame, settings, onSettingsChange, onLogout, us
           <MainMenuScreen
             onNavigate={setCurrentScreen}
             onStartGame={handleStartGame}
+            onStartMatchmaking={onStartMatchmaking}
             onLogout={onLogout}
             decks={decks}
             equippedDeckId={equippedDeckId}
@@ -206,6 +208,7 @@ export function MainMenu({ onStartGame, settings, onSettingsChange, onLogout, us
 function MainMenuScreen({
   onNavigate,
   onStartGame,
+  onStartMatchmaking,
   onLogout,
   decks,
   equippedDeckId,
@@ -218,6 +221,7 @@ function MainMenuScreen({
 }: {
   onNavigate: (screen: MenuScreen) => void
   onStartGame: () => void
+  onStartMatchmaking: () => void
   onLogout: () => void
   decks: UserDeck[]
   equippedDeckId: number | null
@@ -363,6 +367,13 @@ function MainMenuScreen({
           onClick={onStartGame}
           primary
           disabled={loading || !equippedDeck}
+        />
+        <MenuButton
+          icon={<Users className="w-5 h-5" />}
+          label="PVP MATCHMAKING"
+          sublabel="Start an operation with a rival"
+          onClick={onStartMatchmaking}
+          disabled={loading}
         />
         <MenuButton
           icon={<User className="w-5 h-5" />}

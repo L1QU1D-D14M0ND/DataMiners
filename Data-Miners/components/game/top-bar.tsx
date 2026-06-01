@@ -121,9 +121,10 @@ export function TopBar({ gameState, onShowTechTree, onShowSettings }: TopBarProp
 
               <TacticalResourceCard
                 icon={<Database className="w-3.5 h-3.5 text-purple-400" />}
-                label="DATA"
-                value={gameState.resources.dataUploaded}
-                max={gameState.resources.maxDataUploaded}
+                label="DL SPD"
+                value={gameState.downloadSpeed}
+                max={10}
+                suffix="/t"
               />
 
               <div className="ark-divider" />
@@ -131,7 +132,7 @@ export function TopBar({ gameState, onShowTechTree, onShowSettings }: TopBarProp
               <OpponentInfoCard
                 icon={<Users className="w-3.5 h-3.5 text-red-400" />}
                 label="OPPONENT"
-                value="N/A"
+                value={gameState.opponentState ? `${gameState.opponentState.downloadSpeed} MB/s` : "N/A"}
               />
             </div>
 

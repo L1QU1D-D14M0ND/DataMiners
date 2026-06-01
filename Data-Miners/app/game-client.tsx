@@ -4,6 +4,7 @@ import dynamic from "next/dynamic"
 import { useEffect, useState, useCallback, useMemo } from "react"
 import { ArrowRight, Home, Lock, Mail, Settings, ShieldCheck, User, UserPlus } from "lucide-react"
 import { MainMenu } from "@/components/game/main-menu"
+import { MatchmakingLobby } from "@/components/matchmaking/matchmaking-lobby"
 import type { GameSettings } from "@/lib/game/types"
 import axios from "@/lib/axios"
 import { isAxiosError } from "axios"
@@ -61,6 +62,8 @@ interface UserProfile {
 export default function GameClient() {
   const [gameStarted, setGameStarted] = useState(false)
   const [deckIds, setDeckIds] = useState<string[]>([])
+  const [matchId, setMatchId] = useState<string | null>(null)
+  const [inMatchmaking, setInMatchmaking] = useState(false)
   const [settings, setSettings] = useState<GameSettings>({
     volume: 0.7,
     soundEnabled: true,
@@ -147,11 +150,56 @@ export default function GameClient() {
   const handleReturnToMenu = useCallback(() => {
     setGameStarted(false)
     setDeckIds([])
+    setMatchId(null)
   }, [])
 
   const handleStartGame = useCallback((selectedDeckIds: string[]) => {
     setDeckIds(selectedDeckIds)
     setGameStarted(true)
+  }, [])
+
+  const handleStartMatchmaking = useCallback(() => {
+    setInMatchmaking(true)
+  }, [])
+
+  const handleMatchFound = useCallback(async (foundMatchId: string, gameSessionId: number) => {
+    console.log("handleMatchFound called with:", foundMatchId, gameSessionId)
+    try {
+      // Initialize card mapping first
+      const { initializeCardMapping, fetchDecks, toFrontendCardIds } = await import("@/lib/game/cards/card-mapping")
+      await initializeCardMapping()
+
+      // Fetch user's decks to get the default deck
+      const backendDecks = await fetchDecks()
+      console.log("Fetched decks:", backendDecks)
+      const userDecks = backendDecks.map((bd: any) => ({
+        id: bd.id,
+        name: bd.name,
+        cardIds: toFrontendCardIds(bd.card_ids),
+      }))
+
+      // Use the first deck as default
+      const defaultDeck = userDecks[0]
+      console.log("Default deck:", defaultDeck)
+      if (defaultDeck) {
+        setDeckIds(defaultDeck.cardIds)
+      }
+
+      setMatchId(foundMatchId)
+      setInMatchmaking(false)
+      setGameStarted(true)
+      console.log("Game started with matchId:", foundMatchId)
+    } catch (error) {
+      console.error("Failed to load deck for match:", error)
+      // Still start the game even if deck loading fails
+      setMatchId(foundMatchId)
+      setInMatchmaking(false)
+      setGameStarted(true)
+    }
+  }, [])
+
+  const handleMatchmakingCancel = useCallback(() => {
+    setInMatchmaking(false)
   }, [])
 
   const handleLogout = useCallback(async () => {
@@ -434,10 +482,20 @@ export default function GameClient() {
     )
   }
 
+  if (inMatchmaking) {
+    return (
+      <MatchmakingLobby
+        onMatchFound={handleMatchFound}
+        onCancel={handleMatchmakingCancel}
+      />
+    )
+  }
+
   if (!gameStarted) {
     return (
       <MainMenu
         onStartGame={handleStartGame}
+        onStartMatchmaking={handleStartMatchmaking}
         settings={settings}
         onSettingsChange={setSettings}
         onLogout={handleLogout}
@@ -451,6 +509,7 @@ export default function GameClient() {
     <GameCanvas
       onReturnToMenu={handleReturnToMenu}
       deckIds={deckIds}
+      matchId={matchId}
       settings={settings}
       onSettingsChange={setSettings}
     />

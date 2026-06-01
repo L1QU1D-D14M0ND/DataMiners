@@ -64,29 +64,37 @@ export function CardHand({ deckIds }: CardHandProps) {
 
   const handleUseCard = useCallback((card: GameCard) => {
     SoundManager.playClick()
-    
+
+    // Dispatch card usage event for PvP
+    window.dispatchEvent(new CustomEvent('cardUsed', {
+      detail: {
+        cardId: card.id,
+        cardName: card.name,
+      }
+    }))
+
     // Remove card from hand
     setHand(prevHand => {
       const newHand = prevHand.filter(c => c.id !== card.id)
-      
+
       // Draw a random card from deck that's not currently in hand
       const deck = deckIds || []
       const currentHandIds = newHand.map(c => c.id)
       const availableCards = deck.filter(id => !currentHandIds.includes(id))
-      
+
       if (availableCards.length > 0) {
         const randomIndex = Math.floor(Math.random() * availableCards.length)
         const newCardId = availableCards[randomIndex]
         const newCard = getCardById(newCardId)
-        
+
         if (newCard) {
           return [...newHand, newCard]
         }
       }
-      
+
       return newHand
     })
-    
+
     setActiveCard(null)
   }, [deckIds])
 

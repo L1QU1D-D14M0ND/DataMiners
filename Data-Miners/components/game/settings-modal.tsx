@@ -13,6 +13,7 @@ interface SettingsModalProps {
   }
   onSettingsChange: (settings: SettingsModalProps["settings"]) => void
   onReturnToMenu?: () => void
+  onReturnToMenuWithWarning?: () => void
 }
 
 export function SettingsModal({
@@ -21,6 +22,7 @@ export function SettingsModal({
   settings,
   onSettingsChange,
   onReturnToMenu,
+  onReturnToMenuWithWarning,
 }: SettingsModalProps) {
   const { theme, setTheme } = useTheme()
   
@@ -114,7 +116,7 @@ export function SettingsModal({
               <button
                 onClick={() => {
                   onClose()
-                  onReturnToMenu()
+                  onReturnToMenuWithWarning?.() || onReturnToMenu()
                 }}
                 className="w-full ark-button-danger flex items-center justify-center gap-3 p-3"
               >
