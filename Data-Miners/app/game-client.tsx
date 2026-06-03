@@ -133,9 +133,14 @@ export default function GameClient() {
 
         setUser(response.data.user)
         setStatus("authenticated")
-      } catch {
+      } catch (error) {
         if (isMounted) {
-          setStatus("guest")
+          if (isAxiosError(error) && error.response?.status === 401) {
+            setStatus("guest")
+          } else {
+            console.error("Failed to fetch user session:", error)
+            setStatus("guest")
+          }
         }
       }
     }
@@ -206,9 +211,7 @@ export default function GameClient() {
     try {
       await axios.post("/spa/logout")
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Logout failed:", error)
-      }
+      console.error("Logout failed:", error)
     } finally {
       setUser(null)
       setStatus("guest")

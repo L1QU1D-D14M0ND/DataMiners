@@ -21,17 +21,12 @@ import {
   toFrontendCardIds,
 } from "@/lib/game/cards/card-mapping"
 import { getCardIcon } from "@/lib/game/icons"
+import type { UserDeck } from "@/lib/game/cards/deck-types"
 
 interface DeckEditorProps {
   onBack: () => void
   onDecksUpdated?: () => void
   initialDeckId?: number | null
-}
-
-interface UserDeck {
-  id: number
-  name: string
-  cardIds: string[]
 }
 
 function CompactCardTile({

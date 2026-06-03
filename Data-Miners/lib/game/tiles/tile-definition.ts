@@ -1,4 +1,5 @@
 import type { TerrainType } from "../types"
+import { createDefinitionFactory } from "../registry"
 
 /**
  * Base interface for all tile definitions
@@ -48,9 +49,4 @@ export function cloneTileStats(stats: TileStats): TileStats {
 /**
  * Creates a tile definition with current stats initialized from base stats
  */
-export function createTileDefinition(partial: Omit<TileDefinition, "stats"> & { stats?: TileStats }): TileDefinition {
-  return {
-    ...partial,
-    stats: partial.stats ?? cloneTileStats(partial.baseStats),
-  }
-}
+export const createTileDefinition = createDefinitionFactory<TileStats, TileDefinition>(cloneTileStats)
