@@ -1,12 +1,7 @@
 {
 	"authHost": "http://localhost",
 	"authEndpoint": "/broadcasting/auth",
-	"clients": [
-		{
-			"appId": "data-miners",
-			"key": "data-miners-key"
-		}
-	],
+	"clients": [],
 	"database": "redis",
 	"databaseConfig": {
 		"redis": {
@@ -15,7 +10,7 @@
 			"password": null
 		}
 	},
-	"devMode": true,
+	"devMode": false,
 	"host": "127.0.0.1",
 	"port": 6001,
 	"protocol": "http",

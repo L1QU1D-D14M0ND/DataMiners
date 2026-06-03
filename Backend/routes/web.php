@@ -17,8 +17,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::post('/spa/login', [SpaAuthenticationController::class, 'login'])->name('spa.login');
-Route::post('/spa/register', [SpaAuthenticationController::class, 'register'])->name('spa.register');
+Route::post('/spa/login', [SpaAuthenticationController::class, 'login'])->middleware('throttle:5,1')->name('spa.login');
+Route::post('/spa/register', [SpaAuthenticationController::class, 'register'])->middleware('throttle:5,1')->name('spa.register');
 Route::get('/spa/user', [SpaAuthenticationController::class, 'user'])->name('spa.user');
 Route::post('/spa/logout', [SpaAuthenticationController::class, 'logout'])->name('spa.logout');
 
