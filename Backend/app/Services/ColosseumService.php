@@ -90,6 +90,14 @@ class ColosseumService
                 ])
                 ->delete("{$this->apiUrl}/v1/queues/{$queueName}/players/{$userId}");
 
+            if (!$response->successful()) {
+                Log::error('Colosseum API error', [
+                    'action' => 'removeFromQueue',
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
+
             return $response->successful();
         } catch (\Exception $e) {
             Log::error('Colosseum service error', [
@@ -122,6 +130,12 @@ class ColosseumService
                 return $response->json();
             }
 
+            Log::error('Colosseum API error', [
+                'action' => 'getPlayerStatus',
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
             return null;
         } catch (\Exception $e) {
             Log::error('Colosseum service error', [
@@ -153,6 +167,12 @@ class ColosseumService
             if ($response->successful()) {
                 return $response->json();
             }
+
+            Log::error('Colosseum API error', [
+                'action' => 'getQueueInfo',
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
 
             return null;
         } catch (\Exception $e) {
@@ -225,6 +245,14 @@ class ColosseumService
                     'results' => $results,
                     'submitted_at' => now()->toISOString(),
                 ]);
+
+            if (!$response->successful()) {
+                Log::error('Colosseum API error', [
+                    'action' => 'submitMatchResult',
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
 
             return $response->successful();
         } catch (\Exception $e) {

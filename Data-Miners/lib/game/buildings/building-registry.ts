@@ -1,5 +1,6 @@
 import type { BuildingDefinition, BuildingStats, NumericBuildingStatKey } from "./building-definition"
 import { cloneStats } from "./building-definition"
+import { GameRegistry } from "../registry"
 import { powerSourceDefinition } from "./power-source"
 import { generatorDefinition } from "./generator"
 import { pylonDefinition } from "./pylon"
@@ -29,36 +30,38 @@ export type TechUpgrade = {
  * Central registry for all buildings
  * Supports runtime stat modifications via upgrades
  */
-class BuildingRegistryClass {
-  private buildings: Map<string, BuildingDefinition> = new Map()
+class BuildingRegistryClass extends GameRegistry<string, BuildingDefinition> {
   private appliedUpgrades: Set<string> = new Set()
 
   constructor() {
+    super("buildingRegistryChange")
     this.registerBuilding(powerSourceDefinition)
     this.registerBuilding(generatorDefinition)
     this.registerBuilding(pylonDefinition)
-    this.registerBuilding(factoryDefinition) // Register factoryDefinition instead of consumerDefinition
+    this.registerBuilding(factoryDefinition)
     this.registerBuilding(drillDefinition)
     this.registerBuilding(alienMonolithDefinition)
     this.registerBuilding(uplinkDefinition)
   }
 
-  registerBuilding(definition: BuildingDefinition): void {
-    // Create a deep copy to avoid mutation issues
-    const copy: BuildingDefinition = {
+  protected cloneItem(definition: BuildingDefinition): BuildingDefinition {
+    return {
       ...definition,
       baseStats: cloneStats(definition.baseStats),
       stats: cloneStats(definition.baseStats),
     }
-    this.buildings.set(definition.id, copy)
+  }
+
+  registerBuilding(definition: BuildingDefinition): void {
+    this.register(definition, definition.id)
   }
 
   getBuilding(id: string): BuildingDefinition | undefined {
-    return this.buildings.get(id)
+    return this.get(id)
   }
 
   getAllBuildings(): BuildingDefinition[] {
-    return Array.from(this.buildings.values())
+    return this.getAll()
   }
 
   getPlaceableBuildings(): BuildingDefinition[] {
@@ -69,15 +72,12 @@ class BuildingRegistryClass {
     return this.getAllBuildings().filter((b) => b.category === category)
   }
 
-  /**
-   * Apply an upgrade to a building's stats
-   */
   applyUpgrade(upgrade: TechUpgrade): boolean {
     if (this.appliedUpgrades.has(upgrade.id)) {
-      return false // Already applied
+      return false
     }
 
-    const building = this.buildings.get(upgrade.buildingId)
+    const building = this.get(upgrade.buildingId)
     if (!building) {
       return false
     }
@@ -87,7 +87,6 @@ class BuildingRegistryClass {
       building.stats[u.statKey] = u.isMultiplier ? currentValue * u.value : currentValue + u.value
     }
 
-    // Increment level
     if (building.stats.level < building.stats.maxLevel) {
       building.stats.level++
     }
@@ -97,48 +96,27 @@ class BuildingRegistryClass {
     return true
   }
 
-  /**
-   * Reset a building's stats to base values
-   */
   resetBuilding(buildingId: string): void {
-    const building = this.buildings.get(buildingId)
+    const building = this.get(buildingId)
     if (building) {
       building.stats = cloneStats(building.baseStats)
     }
   }
 
-  /**
-   * Reset all buildings to base values
-   */
   resetAll(): void {
-    for (const building of this.buildings.values()) {
+    for (const building of this.items.values()) {
       building.stats = cloneStats(building.baseStats)
     }
     this.appliedUpgrades.clear()
     this.emitChange()
   }
 
-  /**
-   * Check if an upgrade has been applied
-   */
   hasUpgrade(upgradeId: string): boolean {
     return this.appliedUpgrades.has(upgradeId)
   }
 
-  /**
-   * Get current stat value for a building
-   */
   getStat<K extends keyof BuildingStats>(buildingId: string, statKey: K): BuildingStats[K] | undefined {
-    return this.buildings.get(buildingId)?.stats[statKey]
-  }
-
-  /**
-   * Emit a change event for UI updates
-   */
-  private emitChange(): void {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("buildingRegistryChange"))
-    }
+    return this.get(buildingId)?.stats[statKey]
   }
 }
 

@@ -36,10 +36,21 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        // Create a token for the user
         $token = $user->createToken('frontend-auth')->plainTextToken;
 
-        // Redirect to frontend with the token
-        return redirect('http://localhost:3000?token=' . $token);
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+
+        return redirect($frontendUrl)
+            ->withCookie(cookie(
+                'auth_token',
+                $token,
+                5,          // 5-minute expiry
+                '/',
+                parse_url($frontendUrl, PHP_URL_HOST),
+                env('SESSION_SECURE_COOKIE', false),
+                true,       // httpOnly
+                false,
+                'Strict'
+            ));
     }
 }

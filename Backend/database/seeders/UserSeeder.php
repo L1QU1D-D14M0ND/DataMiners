@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
         $admin = User::create([
             'name' => 'Overlord',
             'email' => 'overlord@admin.local',
-            'password' => bcrypt('Evil Blessing Overlord'),
+            'password' => bcrypt(env('SEED_ADMIN_PASSWORD', 'ChangeMe!Admin#' . bin2hex(random_bytes(4)))),
             'role_id' => $adminRole?->id,
             'rank_score' => 999999,
             'experience_points' => 999999,
@@ -80,7 +80,7 @@ class UserSeeder extends Seeder
         $testUser1 = User::create([
             'name' => 'TestPlayer1',
             'email' => 'player1@test.local',
-            'password' => bcrypt('password123'),
+            'password' => bcrypt(env('SEED_TEST_PASSWORD', 'TestPass!' . bin2hex(random_bytes(4)))),
             'role_id' => $playerRole?->id,
             'rank_score' => 1000,
             'experience_points' => 500,
@@ -117,7 +117,7 @@ class UserSeeder extends Seeder
         $testUser2 = User::create([
             'name' => 'TestPlayer2',
             'email' => 'player2@test.local',
-            'password' => bcrypt('password123'),
+            'password' => bcrypt(env('SEED_TEST_PASSWORD', 'TestPass!' . bin2hex(random_bytes(4)))),
             'role_id' => $playerRole?->id,
             'rank_score' => 1000,
             'experience_points' => 500,
