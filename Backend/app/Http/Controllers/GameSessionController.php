@@ -207,6 +207,11 @@ class GameSessionController extends Controller
 
         $session = GameSession::byMatch($matchId)->active()->forPlayer($user->id)->first();
         if (!$session) {
+            // Session might already be completed (e.g., by opponent conceding)
+            $completedSession = GameSession::byMatch($matchId)->completed()->forPlayer($user->id)->first();
+            if ($completedSession) {
+                return response()->json(['message' => 'Match already ended']);
+            }
             return response()->json(['error' => 'Session not found'], 404);
         }
 

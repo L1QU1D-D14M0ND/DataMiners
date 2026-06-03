@@ -249,40 +249,6 @@ export function GameUI({
     }
     window.addEventListener("zoomLevelUpdate", handleZoomUpdate)
 
-    // Listen for match ended event from WebSocket
-    const wsClient = getWebSocketClient()
-    const handleMatchEnded = (data: MatchEndedEvent) => {
-      if (matchResultRef.current) return
-
-      // Get current user ID from localStorage
-      const userData = localStorage.getItem('user')
-      if (!userData) return
-
-      const user = JSON.parse(userData)
-      const isLoser = user.id === data.loserId
-
-      if (isLoser && matchId === data.matchId) {
-        const currentGameState = gameStateRef.current
-        const result: MatchResult = {
-          outcome: "loss",
-          playerStats: {
-            timeElapsedSeconds: currentGameState?.elapsedSeconds ?? 0,
-            energyGenerated: currentGameState?.totalEnergyGenerated ?? 0,
-            downloadSpeed: currentGameState?.downloadSpeed ?? 0,
-          },
-          rivalStats: null,
-          reward: getRewardForOutcome("loss"),
-        }
-
-        matchResultRef.current = result
-        setMatchResult(result)
-        SoundManager.playUnlock()
-        persistMatchResult(result)
-      }
-    }
-
-    const unsubscribeMatchEnded = wsClient.onMatchEnded(handleMatchEnded)
-
     const openMatchResult = (event: Event, fallbackOutcome: MatchResultOutcome) => {
       if (matchResultRef.current) return
 
@@ -322,7 +288,6 @@ export function GameUI({
       window.removeEventListener("zoomLevelUpdate", handleZoomUpdate)
       window.removeEventListener("gameWon", handleGameWon)
       window.removeEventListener("gameLost", handleGameLost)
-      unsubscribeMatchEnded()
     }
   }, [persistMatchResult])
 
@@ -346,6 +311,37 @@ export function GameUI({
       detail: { matchId }
     }))
 
+    // Listen for match ended events
+    const unsubscribeMatchEnded = wsClient.onMatchEnded((data: MatchEndedEvent) => {
+      if (matchResultRef.current) return
+
+      // Get current user ID from localStorage
+      const userData = localStorage.getItem('user')
+      if (!userData) return
+
+      const user = JSON.parse(userData)
+      const isLoser = user.id === data.loserId
+
+      if (isLoser && matchId === data.matchId) {
+        const currentGameState = gameStateRef.current
+        const result: MatchResult = {
+          outcome: "loss",
+          playerStats: {
+            timeElapsedSeconds: currentGameState?.elapsedSeconds ?? 0,
+            energyGenerated: currentGameState?.totalEnergyGenerated ?? 0,
+            downloadSpeed: currentGameState?.downloadSpeed ?? 0,
+          },
+          rivalStats: null,
+          reward: getRewardForOutcome("loss"),
+        }
+
+        matchResultRef.current = result
+        setMatchResult(result)
+        SoundManager.playUnlock()
+        persistMatchResult(result)
+      }
+    })
+
     // Listen for game state changes from opponent
     const unsubscribeGameState = wsClient.onGameStateChange((data: GameStateUpdate) => {
       // Update opponent state in game state
@@ -367,6 +363,7 @@ export function GameUI({
     })
 
     return () => {
+      unsubscribeMatchEnded()
       unsubscribeGameState()
       unsubscribeCardUsed()
       wsClient.leaveMatch()

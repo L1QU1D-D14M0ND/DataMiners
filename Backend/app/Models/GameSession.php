@@ -17,6 +17,7 @@ class GameSession extends Model
         'player1_state',
         'player2_state',
         'status',
+        'winner_id',
         'started_at',
         'ended_at',
     ];
@@ -41,6 +42,11 @@ class GameSession extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
     }
 
     public function scopeByMatch($query, string $matchId)
