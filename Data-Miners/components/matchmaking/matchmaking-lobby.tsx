@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Clock, Users, X, Loader2 } from "lucide-react"
 import { matchmakingApi, type QueueStatus } from "@/lib/matchmaking"
 import { SoundManager } from "@/lib/game/sound-manager"
+import { formatDuration } from "@/lib/format"
 
 interface MatchmakingLobbyProps {
   onMatchFound: (matchId: string, gameSessionId: number) => void
@@ -135,7 +136,7 @@ export function MatchmakingLobby({ onMatchFound, onCancel, queueName = "default"
             <div className="flex items-center justify-center gap-2 text-white/70">
               <Clock className="w-4 h-4" />
               <span className="font-mono text-sm">
-                {Math.floor(timeInQueue / 60)}:{(timeInQueue % 60).toString().padStart(2, '0')}
+                {formatDuration(timeInQueue)}
               </span>
             </div>
 

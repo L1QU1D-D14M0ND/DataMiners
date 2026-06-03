@@ -22,6 +22,9 @@ import { CardNotificationContainer } from "./card-notification"
 import axios from "@/lib/axios"
 import { getWebSocketClient, type GameStateUpdate, type CardUsageEvent, type MatchEndedEvent } from "@/lib/websocket-client"
 import { Clock, Coins, Home, Maximize2, Signal, Star, Trophy, Trash2, Zap, ZoomIn, ZoomOut, AlertTriangle } from "lucide-react"
+import { useSoundSettings } from "@/lib/hooks/use-sound-settings"
+import { useSettingsMenuToggle } from "@/lib/hooks/use-settings-menu-toggle"
+import { formatDuration } from "@/lib/format"
 
 interface GameUIProps {
   gameState: GameState
@@ -63,13 +66,6 @@ const getRewardForOutcome = (outcome: MatchResultOutcome): MatchReward => {
     credits: Math.floor(WIN_REWARD.credits * multiplier),
     rankScore: Math.floor(WIN_REWARD.rankScore * multiplier),
   }
-}
-
-const formatDuration = (totalSeconds: number) => {
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`
 }
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value)
@@ -222,19 +218,8 @@ export function GameUI({
     }
   }, [matchId, onReturnToMenu])
 
-  // Sync sound settings
-  useEffect(() => {
-    SoundManager.setVolume(settings.volume)
-    SoundManager.setEnabled(settings.soundEnabled)
-  }, [settings.volume, settings.soundEnabled])
-
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent("settingsMenuToggle", { detail: { isOpen: showSettings } }))
-
-    return () => {
-      window.dispatchEvent(new CustomEvent("settingsMenuToggle", { detail: { isOpen: false } }))
-    }
-  }, [showSettings])
+  useSoundSettings(settings)
+  useSettingsMenuToggle(showSettings)
 
   useEffect(() => {
     setPlaceableBuildings(BuildingRegistry.getPlaceableBuildings())
