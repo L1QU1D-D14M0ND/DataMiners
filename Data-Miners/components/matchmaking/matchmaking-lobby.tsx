@@ -21,6 +21,8 @@ export function MatchmakingLobby({ onMatchFound, onCancel, queueName = "default"
   useEffect(() => {
     let mounted = true
     let pollInterval: NodeJS.Timeout | null = null
+    let consecutiveFailures = 0
+    const MAX_CONSECUTIVE_FAILURES = 5
 
     const joinQueue = async () => {
       try {
@@ -42,6 +44,7 @@ export function MatchmakingLobby({ onMatchFound, onCancel, queueName = "default"
         const queueStatus = await matchmakingApi.getQueueStatus()
         if (!mounted) return
 
+        consecutiveFailures = 0
         setStatus(queueStatus)
 
         console.log("Queue status:", queueStatus)
@@ -59,7 +62,13 @@ export function MatchmakingLobby({ onMatchFound, onCancel, queueName = "default"
         }
       } catch (err) {
         if (mounted) {
-          console.error("Failed to poll queue status:", err)
+          consecutiveFailures++
+          console.error(`Failed to poll queue status (attempt ${consecutiveFailures}):`, err)
+
+          if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+            if (pollInterval) clearInterval(pollInterval)
+            setError("Lost connection to matchmaking server. Please try again.")
+          }
         }
       }
     }
