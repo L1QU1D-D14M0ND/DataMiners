@@ -192,7 +192,7 @@ class MatchmakingController extends Controller
         }
 
         // Trigger matchmaking check
-        $this->findMatches($queue->queue_name);
+        $this->performMatchmaking($queue->queue_name);
 
         return response()->json([
             'in_queue' => true,
@@ -205,9 +205,23 @@ class MatchmakingController extends Controller
     }
 
     /**
-     * Find matches for a queue (called by background job or Colosseum webhook)
+     * Find matches for a queue (HTTP route handler)
      */
-    public function findMatches(string $queueName): JsonResponse
+    public function findMatches(Request $request): JsonResponse
+    {
+        $request->validate([
+            'queue_name' => 'required|string|max:50',
+        ]);
+
+        $matches = $this->performMatchmaking($request->queue_name);
+
+        return response()->json(['matches' => $matches]);
+    }
+
+    /**
+     * Perform matchmaking logic for a given queue
+     */
+    private function performMatchmaking(string $queueName): array
     {
         $skillRange = config('matchmaking.skill_range', 100);
         $maxWaitTime = config('matchmaking.max_wait_time', 60);
@@ -282,7 +296,7 @@ class MatchmakingController extends Controller
             }
         }
 
-        return response()->json(['matches' => $matches]);
+        return $matches;
     }
 
     /**
