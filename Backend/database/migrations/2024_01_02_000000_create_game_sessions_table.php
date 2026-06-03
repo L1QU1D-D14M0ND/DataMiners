@@ -15,6 +15,7 @@ return new class extends Migration
             $table->foreignId('player2_id')->constrained('users')->onDelete('cascade');
             $table->json('player1_state')->nullable();
             $table->json('player2_state')->nullable();
+            $table->foreignId('winner_id')->nullable()->constrained('users');
             $table->string('status')->default('active'); // 'active', 'completed', 'abandoned'
             $table->timestamp('started_at')->nullable();
             $table->timestamp('ended_at')->nullable();
