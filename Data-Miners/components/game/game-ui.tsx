@@ -159,6 +159,7 @@ export function GameUI({
   const [rewardStatus, setRewardStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle")
   const [showExitWarning, setShowExitWarning] = useState(false)
   const [isConceding, setIsConceding] = useState(false)
+  const [concedeError, setConcedeError] = useState<string | null>(null)
   const gameStateRef = useRef<GameState | null>(gameState)
   const matchResultRef = useRef<MatchResult | null>(null)
 
@@ -191,9 +192,7 @@ export function GameUI({
       )
       setRewardStatus("saved")
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Failed to persist match result:", error)
-      }
+      console.error("Failed to persist match result:", error)
       setRewardStatus("failed")
     }
   }, [])
@@ -202,14 +201,14 @@ export function GameUI({
     if (!matchId) return
 
     setIsConceding(true)
+    setConcedeError(null)
     try {
       await axios.post(`/api/game-sessions/${matchId}/concede`)
       SoundManager.playClick()
       onReturnToMenu?.()
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Failed to concede match:", error)
-      }
+      console.error("Failed to concede match:", error)
+      setConcedeError("Failed to concede. Please try again.")
       setIsConceding(false)
     }
   }, [matchId, onReturnToMenu])
@@ -508,6 +507,9 @@ export function GameUI({
             <p className="text-white/70 text-sm mb-6">
               You are currently in a PvP match. Leaving now will count as a concession and you will lose the match.
             </p>
+            {concedeError && (
+              <p className="text-red-400 text-xs mb-4">{concedeError}</p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setShowExitWarning(false)}

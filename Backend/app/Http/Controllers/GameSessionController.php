@@ -10,6 +10,7 @@ use App\Events\MatchEnded;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class GameSessionController extends Controller
 {
@@ -68,12 +69,20 @@ class GameSessionController extends Controller
         $session->updatePlayerState($user->id, $state);
 
         // Broadcast the state change to the opponent
-        broadcast(new GameStateChanged(
-            $matchId,
-            $user->id,
-            $request->download_speed,
-            $request->energy_generated
-        ));
+        try {
+            broadcast(new GameStateChanged(
+                $matchId,
+                $user->id,
+                $request->download_speed,
+                $request->energy_generated
+            ));
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast game state change', [
+                'match_id' => $matchId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json(['message' => 'State updated successfully']);
     }
@@ -108,12 +117,21 @@ class GameSessionController extends Controller
         ]);
 
         // Broadcast the card usage to the opponent
-        broadcast(new CardUsed(
-            $matchId,
-            $user->id,
-            $request->card_id,
-            $request->card_name
-        ));
+        try {
+            broadcast(new CardUsed(
+                $matchId,
+                $user->id,
+                $request->card_id,
+                $request->card_name
+            ));
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast card usage', [
+                'match_id' => $matchId,
+                'user_id' => $user->id,
+                'card_id' => $request->card_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json(['message' => 'Card usage reported successfully']);
     }
@@ -190,7 +208,16 @@ class GameSessionController extends Controller
         ]);
 
         // Broadcast match ended event
-        broadcast(new MatchEnded($matchId, $winnerId, $user->id));
+        try {
+            broadcast(new MatchEnded($matchId, $winnerId, $user->id));
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast match conceded event', [
+                'match_id' => $matchId,
+                'winner_id' => $winnerId,
+                'loser_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json(['message' => 'Match conceded successfully']);
     }
@@ -221,7 +248,16 @@ class GameSessionController extends Controller
         ]);
 
         // Broadcast match ended event to both players
-        broadcast(new MatchEnded($matchId, $user->id, $loserId));
+        try {
+            broadcast(new MatchEnded($matchId, $user->id, $loserId));
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast match ended event', [
+                'match_id' => $matchId,
+                'winner_id' => $user->id,
+                'loser_id' => $loserId,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json(['message' => 'Match end reported successfully']);
     }
