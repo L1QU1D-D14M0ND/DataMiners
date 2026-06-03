@@ -25,6 +25,16 @@ class GameSessionController extends Controller
             'player2_id' => 'required|exists:users,id|different:player1_id',
         ]);
 
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $userId = $user->id;
+        if ($userId !== (int) $request->player1_id && $userId !== (int) $request->player2_id) {
+            return response()->json(['error' => 'You must be a participant in the match'], 403);
+        }
+
         $session = GameSession::create([
             'match_id' => $request->match_id,
             'player1_id' => $request->player1_id,
@@ -227,6 +237,10 @@ class GameSessionController extends Controller
      */
     public function reportMatchEnd(Request $request, string $matchId): JsonResponse
     {
+        $request->validate([
+            'winner_id' => 'required|exists:users,id',
+        ]);
+
         $user = Auth::user();
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -237,23 +251,25 @@ class GameSessionController extends Controller
             return response()->json(['error' => 'Session not found'], 404);
         }
 
-        // Determine the loser
-        $loserId = ($session->player1_id === $user->id) ? $session->player2_id : $session->player1_id;
+        $winnerId = (int) $request->winner_id;
+        if ($winnerId !== $session->player1_id && $winnerId !== $session->player2_id) {
+            return response()->json(['error' => 'Winner must be a participant'], 422);
+        }
 
-        // Mark the session as completed
+        $loserId = ($winnerId === $session->player1_id) ? $session->player2_id : $session->player1_id;
+
         $session->update([
             'status' => 'completed',
-            'winner_id' => $user->id,
+            'winner_id' => $winnerId,
             'ended_at' => now(),
         ]);
 
-        // Broadcast match ended event to both players
         try {
-            broadcast(new MatchEnded($matchId, $user->id, $loserId));
+            broadcast(new MatchEnded($matchId, $winnerId, $loserId));
         } catch (\Exception $e) {
             Log::error('Failed to broadcast match ended event', [
                 'match_id' => $matchId,
-                'winner_id' => $user->id,
+                'winner_id' => $winnerId,
                 'loser_id' => $loserId,
                 'error' => $e->getMessage(),
             ]);
