@@ -23,7 +23,7 @@ class Cosmetic extends Model
      */
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'user_cosmetic', 'cosmetics_cosmetic_id', 'users_user_id')
+        return $this->belongsToMany(User::class, 'user_cosmetic', 'cosmetic_id', 'user_id')
             ->withPivot('unlocked');
     }
 

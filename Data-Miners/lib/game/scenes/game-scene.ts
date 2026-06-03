@@ -822,10 +822,7 @@ export class GameScene extends Phaser.Scene {
 
       // Report match end to backend if in PvP
       if (this.matchId) {
-        axios.post(`/api/game-sessions/${this.matchId}/report-end`)
-          .catch((error) => {
-            console.error("Failed to report match end:", error)
-          })
+        this.reportMatchEndWithRetry(this.matchId)
       }
 
       window.dispatchEvent(
@@ -1133,6 +1130,20 @@ export class GameScene extends Phaser.Scene {
       }
       if (progressBg) {
         progressBg.destroy()
+      }
+    }
+  }
+
+  private async reportMatchEndWithRetry(matchId: string, retries = 2) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        await axios.post(`/api/game-sessions/${matchId}/report-end`)
+        return
+      } catch (error) {
+        console.error(`Failed to report match end (attempt ${attempt + 1}/${retries + 1}):`, error)
+        if (attempt < retries) {
+          await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
+        }
       }
     }
   }

@@ -22,6 +22,9 @@ import { CardNotificationContainer } from "./card-notification"
 import axios from "@/lib/axios"
 import { getWebSocketClient, type GameStateUpdate, type CardUsageEvent, type MatchEndedEvent } from "@/lib/websocket-client"
 import { Clock, Coins, Home, Maximize2, Signal, Star, Trophy, Trash2, Zap, ZoomIn, ZoomOut, AlertTriangle } from "lucide-react"
+import { useSoundSettings } from "@/lib/hooks/use-sound-settings"
+import { useSettingsMenuToggle } from "@/lib/hooks/use-settings-menu-toggle"
+import { formatDuration } from "@/lib/format"
 
 interface GameUIProps {
   gameState: GameState
@@ -63,13 +66,6 @@ const getRewardForOutcome = (outcome: MatchResultOutcome): MatchReward => {
     credits: Math.floor(WIN_REWARD.credits * multiplier),
     rankScore: Math.floor(WIN_REWARD.rankScore * multiplier),
   }
-}
-
-const formatDuration = (totalSeconds: number) => {
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`
 }
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value)
@@ -159,6 +155,7 @@ export function GameUI({
   const [rewardStatus, setRewardStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle")
   const [showExitWarning, setShowExitWarning] = useState(false)
   const [isConceding, setIsConceding] = useState(false)
+  const [concedeError, setConcedeError] = useState<string | null>(null)
   const gameStateRef = useRef<GameState | null>(gameState)
   const matchResultRef = useRef<MatchResult | null>(null)
 
@@ -191,9 +188,7 @@ export function GameUI({
       )
       setRewardStatus("saved")
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Failed to persist match result:", error)
-      }
+      console.error("Failed to persist match result:", error)
       setRewardStatus("failed")
     }
   }, [])
@@ -202,14 +197,14 @@ export function GameUI({
     if (!matchId) return
 
     setIsConceding(true)
+    setConcedeError(null)
     try {
       await axios.post(`/api/game-sessions/${matchId}/concede`)
       SoundManager.playClick()
       onReturnToMenu?.()
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Failed to concede match:", error)
-      }
+      console.error("Failed to concede match:", error)
+      setConcedeError("Failed to concede. Please try again.")
       setIsConceding(false)
     }
   }, [matchId, onReturnToMenu])
@@ -222,19 +217,8 @@ export function GameUI({
     }
   }, [matchId, onReturnToMenu])
 
-  // Sync sound settings
-  useEffect(() => {
-    SoundManager.setVolume(settings.volume)
-    SoundManager.setEnabled(settings.soundEnabled)
-  }, [settings.volume, settings.soundEnabled])
-
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent("settingsMenuToggle", { detail: { isOpen: showSettings } }))
-
-    return () => {
-      window.dispatchEvent(new CustomEvent("settingsMenuToggle", { detail: { isOpen: false } }))
-    }
-  }, [showSettings])
+  useSoundSettings(settings)
+  useSettingsMenuToggle(showSettings)
 
   useEffect(() => {
     setPlaceableBuildings(BuildingRegistry.getPlaceableBuildings())
@@ -505,6 +489,9 @@ export function GameUI({
             <p className="text-white/70 text-sm mb-6">
               You are currently in a PvP match. Leaving now will count as a concession and you will lose the match.
             </p>
+            {concedeError && (
+              <p className="text-red-400 text-xs mb-4">{concedeError}</p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setShowExitWarning(false)}

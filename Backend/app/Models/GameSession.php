@@ -39,6 +39,11 @@ class GameSession extends Model
         return $this->belongsTo(User::class, 'player2_id');
     }
 
+    public function winner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'winner_id');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active');

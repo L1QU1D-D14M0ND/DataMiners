@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useTheme } from "next-themes"
 import { Play, Settings, Info, X, Volume2, VolumeX, Sun, Moon, ChevronRight, Layers, LogOut, Shield, Zap, User, Users } from "lucide-react"
+import { AnimatedBackground } from "@/components/shared/animated-background"
 import { getCardIcon } from "@/lib/game/icons"
 import type { GameSettings } from "@/lib/game/types"
 import { SoundManager } from "@/lib/game/sound-manager"
@@ -15,7 +16,9 @@ import {
   toFrontendCardIds,
 } from "@/lib/game/cards/card-mapping"
 import { ALL_CARDS } from "@/lib/game/cards/card-types"
+import type { UserDeck } from "@/lib/game/cards/deck-types"
 import { ProfileModal } from "@/components/game/profile-modal"
+import { useSoundSettings } from "@/lib/hooks/use-sound-settings"
 
 interface UserProfile {
   id: number
@@ -35,12 +38,6 @@ interface MainMenuProps {
 }
 
 type MenuScreen = "main" | "settings" | "decks" | "credits"
-
-interface UserDeck {
-  id: number
-  name: string
-  cardIds: string[]
-}
 
 export function MainMenu({ onStartGame, onStartMatchmaking, settings, onSettingsChange, onLogout, user, adminDashboardUrl }: MainMenuProps) {
   const [currentScreen, setCurrentScreen] = useState<MenuScreen>("main")
@@ -105,54 +102,13 @@ export function MainMenu({ onStartGame, onStartMatchmaking, settings, onSettings
     onStartGame(equippedDeck ? equippedDeck.cardIds : [])
   }, [decks, equippedDeckId, onStartGame])
 
-  // Sync sound settings
-  useEffect(() => {
-    SoundManager.setVolume(settings.volume)
-    SoundManager.setEnabled(settings.soundEnabled)
-  }, [settings.volume, settings.soundEnabled])
+  useSoundSettings(settings)
 
   return (
     <div className="fixed inset-0 bg-[#050508] flex items-center justify-center overflow-hidden">
       {/* Animated background elements */}
+      <AnimatedBackground />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Grid pattern */}
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
-            `,
-            backgroundSize: "40px 40px",
-          }}
-        />
-
-        {/* Rotating corner reticles - smaller on mobile */}
-        <svg className="absolute top-4 left-4 w-12 h-12 sm:top-6 sm:left-6 sm:w-16 sm:h-16 lg:w-32 lg:h-32 opacity-20 reticle-spin" viewBox="0 0 100 100">
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            fill="none"
-            stroke="rgba(212,168,83,0.3)"
-            strokeWidth="0.5"
-            strokeDasharray="4 4"
-          />
-          <circle cx="50" cy="50" r="35" fill="none" stroke="rgba(212,168,83,0.2)" strokeWidth="0.5" />
-        </svg>
-        <svg className="absolute bottom-4 right-4 w-16 h-16 sm:bottom-6 sm:right-6 sm:w-20 sm:h-20 lg:w-40 lg:h-40 opacity-20 reticle-spin-reverse" viewBox="0 0 100 100">
-          <rect
-            x="10"
-            y="10"
-            width="80"
-            height="80"
-            fill="none"
-            stroke="rgba(255,255,255,0.2)"
-            strokeWidth="0.5"
-            strokeDasharray="8 4"
-          />
-        </svg>
-
         {/* Data streams on sides - hidden on very small screens */}
         <div className="absolute left-4 top-0 bottom-0 w-px hidden sm:block">
           <div className="w-full h-20 bg-gradient-to-b from-transparent via-white/20 to-transparent data-stream" />
@@ -162,9 +118,6 @@ export function MainMenu({ onStartGame, onStartMatchmaking, settings, onSettings
           <div className="w-full h-20 bg-gradient-to-b from-transparent via-white/20 to-transparent data-stream-delayed" />
           <div className="w-full h-20 bg-gradient-to-b from-transparent via-[#d4a853]/30 to-transparent data-stream" />
         </div>
-
-        {/* Scanlines */}
-        <div className="absolute inset-0 scanlines opacity-30" />
       </div>
 
       {/* Main content */}

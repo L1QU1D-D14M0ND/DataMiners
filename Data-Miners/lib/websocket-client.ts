@@ -86,10 +86,10 @@ class WebSocketClient {
     this.matchEndedCallbacks.clear()
   }
 
-  joinMatch(matchId: string): void {
+  joinMatch(matchId: string): boolean {
     if (!this.echo) {
-      console.error('WebSocket not connected')
-      return
+      console.error('WebSocket not connected — real-time match events will not be received')
+      return false
     }
 
     this.currentMatchId = matchId
@@ -111,6 +111,8 @@ class WebSocketClient {
     channel.listen('.match.ended', (data: MatchEndedEvent) => {
       this.matchEndedCallbacks.forEach((callback) => callback(data))
     })
+
+    return true
   }
 
   leaveMatch(): void {

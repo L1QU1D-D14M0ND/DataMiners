@@ -15,6 +15,7 @@ class CardUsageLog extends Model
         'user_id',
         'card_id',
         'card_name',
+        'used_at',
     ];
 
     public function gameSession(): BelongsTo

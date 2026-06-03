@@ -2,8 +2,9 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { X, User, Star, Coins, Trophy, Sparkles, Lock, Unlock } from "lucide-react"
+import { User, Star, Coins, Trophy, Sparkles, Lock, Unlock } from "lucide-react"
 import axios from "@/lib/axios"
+import { GameModal } from "./game-modal"
 
 interface Cosmetic {
   id: number
@@ -66,21 +67,16 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-auto">
-      <div className="absolute inset-0 bg-black/80" onClick={onClose} />
-
-      <div className="relative ark-card scanlines w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-white/10 flex-shrink-0">
-          <h2 className="font-serif text-lg text-white italic">Profile</h2>
-          <button onClick={onClose} className="p-2 ark-button" aria-label="Close profile">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="p-4 overflow-y-auto flex-1">
+    <GameModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Profile"
+      maxWidth="max-w-2xl"
+      className="max-h-[90vh] flex flex-col"
+      closeLabel="Close profile"
+    >
+      <div className="p-4 overflow-y-auto flex-1">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="font-serif italic text-white/50">Loading profile data...</div>
@@ -216,8 +212,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               )}
             </div>
           ) : null}
-        </div>
       </div>
-    </div>
+    </GameModal>
   )
 }

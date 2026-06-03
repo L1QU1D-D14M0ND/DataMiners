@@ -10,6 +10,7 @@ use App\Events\MatchEnded;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class GameSessionController extends Controller
 {
@@ -23,6 +24,16 @@ class GameSessionController extends Controller
             'player1_id' => 'required|exists:users,id',
             'player2_id' => 'required|exists:users,id|different:player1_id',
         ]);
+
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $userId = $user->id;
+        if ($userId !== (int) $request->player1_id && $userId !== (int) $request->player2_id) {
+            return response()->json(['error' => 'You must be a participant in the match'], 403);
+        }
 
         $session = GameSession::create([
             'match_id' => $request->match_id,
@@ -68,12 +79,20 @@ class GameSessionController extends Controller
         $session->updatePlayerState($user->id, $state);
 
         // Broadcast the state change to the opponent
-        broadcast(new GameStateChanged(
-            $matchId,
-            $user->id,
-            $request->download_speed,
-            $request->energy_generated
-        ));
+        try {
+            broadcast(new GameStateChanged(
+                $matchId,
+                $user->id,
+                $request->download_speed,
+                $request->energy_generated
+            ));
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast game state change', [
+                'match_id' => $matchId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json(['message' => 'State updated successfully']);
     }
@@ -108,12 +127,21 @@ class GameSessionController extends Controller
         ]);
 
         // Broadcast the card usage to the opponent
-        broadcast(new CardUsed(
-            $matchId,
-            $user->id,
-            $request->card_id,
-            $request->card_name
-        ));
+        try {
+            broadcast(new CardUsed(
+                $matchId,
+                $user->id,
+                $request->card_id,
+                $request->card_name
+            ));
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast card usage', [
+                'match_id' => $matchId,
+                'user_id' => $user->id,
+                'card_id' => $request->card_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json(['message' => 'Card usage reported successfully']);
     }
@@ -190,7 +218,16 @@ class GameSessionController extends Controller
         ]);
 
         // Broadcast match ended event
-        broadcast(new MatchEnded($matchId, $winnerId, $user->id));
+        try {
+            broadcast(new MatchEnded($matchId, $winnerId, $user->id));
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast match conceded event', [
+                'match_id' => $matchId,
+                'winner_id' => $winnerId,
+                'loser_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json(['message' => 'Match conceded successfully']);
     }
@@ -200,6 +237,10 @@ class GameSessionController extends Controller
      */
     public function reportMatchEnd(Request $request, string $matchId): JsonResponse
     {
+        $request->validate([
+            'winner_id' => 'required|exists:users,id',
+        ]);
+
         $user = Auth::user();
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -215,18 +256,29 @@ class GameSessionController extends Controller
             return response()->json(['error' => 'Session not found'], 404);
         }
 
-        // Determine the loser
-        $loserId = ($session->player1_id === $user->id) ? $session->player2_id : $session->player1_id;
+        $winnerId = (int) $request->winner_id;
+        if ($winnerId !== $session->player1_id && $winnerId !== $session->player2_id) {
+            return response()->json(['error' => 'Winner must be a participant'], 422);
+        }
 
-        // Mark the session as completed
+        $loserId = ($winnerId === $session->player1_id) ? $session->player2_id : $session->player1_id;
+
         $session->update([
             'status' => 'completed',
-            'winner_id' => $user->id,
+            'winner_id' => $winnerId,
             'ended_at' => now(),
         ]);
 
-        // Broadcast match ended event to both players
-        broadcast(new MatchEnded($matchId, $user->id, $loserId));
+        try {
+            broadcast(new MatchEnded($matchId, $winnerId, $loserId));
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast match ended event', [
+                'match_id' => $matchId,
+                'winner_id' => $winnerId,
+                'loser_id' => $loserId,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json(['message' => 'Match end reported successfully']);
     }

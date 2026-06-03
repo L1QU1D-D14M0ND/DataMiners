@@ -123,8 +123,8 @@ class UserController extends Controller
                             'credits_unlock' => $cosmetic->credits_unlock,
                             'unlocked' => $cosmetic->pivot->unlocked ?? false,
                             'cosmetic_type' => [
-                                'id' => $cosmetic->cosmeticType->id,
-                                'name' => $cosmetic->cosmeticType->name,
+                                'id' => $cosmetic->cosmeticType?->id,
+                                'name' => $cosmetic->cosmeticType?->name,
                             ],
                         ];
                     }),
@@ -138,8 +138,8 @@ class UserController extends Controller
                     'credits_unlock' => $cosmetic->credits_unlock,
                     'unlocked' => $cosmetic->pivot->unlocked ?? false,
                     'cosmetic_type' => [
-                        'id' => $cosmetic->cosmeticType->id,
-                        'name' => $cosmetic->cosmeticType->name,
+                        'id' => $cosmetic->cosmeticType?->id,
+                        'name' => $cosmetic->cosmeticType?->name,
                     ],
                 ];
             }),
