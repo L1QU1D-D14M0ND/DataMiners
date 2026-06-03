@@ -144,6 +144,79 @@ From the MainMenu, these buttons are available:
 - Console should show `"Failed to concede match:"` with error details
 - CONCEDE button should return to non-loading state
 
+## Backend Testing (Laravel PHPUnit)
+
+For changes to controllers, routes, or backend logic, you can run PHPUnit tests directly.
+
+### Setup (if PHP is not pre-installed)
+
+```bash
+# Install PHP 8.3 via ondrej PPA (Ubuntu 22.04)
+sudo add-apt-repository -y ppa:ondrej/php
+sudo apt-get update -qq
+sudo apt-get install -y php8.3-cli php8.3-mbstring php8.3-xml php8.3-sqlite3 php8.3-curl
+
+# Install Composer
+sudo curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+```
+
+### Laravel Setup (SQLite, no Redis/MySQL needed for basic tests)
+
+```bash
+cd Backend
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+composer install --no-interaction
+php artisan migrate --force
+```
+
+The `.env.example` defaults to `DB_CONNECTION=sqlite` which works without any external services.
+
+### Running Tests
+
+```bash
+cd Backend
+./vendor/bin/phpunit tests/Feature/FindMatchesRouteTest.php --testdox
+# Or run all tests:
+php artisan test
+```
+
+### Writing Route Tests (Pattern)
+
+```php
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+class MyRouteTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_example(): void
+    {
+        Role::forceCreate(['name' => 'Player']);
+        $user = User::factory()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->postJson('/api/my-route', ['param' => 'value']);
+
+        $response->assertOk()->assertJsonStructure([...]);
+    }
+}
+```
+
+**Note**: `Role::forceCreate(['name' => 'Player'])` is needed before creating users because the User model might have a role relationship. Use `actingAs($user)` to bypass auth middleware in tests.
+
+### Redis-dependent Tests
+
+Methods that use Redis (matchmaking, game sessions) will fail if Redis is not running. For route-resolution tests, this is usually fine because:
+- Empty queues mean no matches are attempted, so Redis isn't called
+- Redis calls in controllers are wrapped in try/catch
+
+For full integration tests involving Redis, install `redis-server` or mock Redis in the test.
+
 ## Build Validation
 
 ```bash
@@ -167,4 +240,4 @@ No ESLint config file exists yet — `npm run lint` might prompt for setup or er
 No secrets are required for frontend-only testing. If testing with the Laravel backend:
 - Database credentials (check `Backend/.env.example`)
 - PHP 8.3 installation
-- Redis connection details
+- Redis connection details (only for full matchmaking integration tests)
