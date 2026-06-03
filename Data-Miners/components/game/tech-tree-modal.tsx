@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { TechRegistry, type TechNode } from "@/lib/game/tech"
 import { X, Zap, Factory, Antenna, Pickaxe, Database, Lock, Check, ChevronRight, Clock } from "lucide-react"
 import { SoundManager } from "@/lib/game/sound-manager"
+import { useSettingsMenuToggle } from "@/lib/hooks/use-settings-menu-toggle"
 
 interface TechTreeModalProps {
   isOpen: boolean
@@ -60,17 +61,7 @@ export function TechTreeModal({ isOpen, onClose, currentData, onUnlock }: TechTr
     return () => window.removeEventListener("techRegistryChange", updateNodes)
   }, [])
 
-  useEffect(() => {
-    if (isOpen) {
-      window.dispatchEvent(new CustomEvent("settingsMenuToggle", { detail: { isOpen: true } }))
-    } else {
-      window.dispatchEvent(new CustomEvent("settingsMenuToggle", { detail: { isOpen: false } }))
-    }
-
-    return () => {
-      window.dispatchEvent(new CustomEvent("settingsMenuToggle", { detail: { isOpen: false } }))
-    }
-  }, [isOpen])
+  useSettingsMenuToggle(isOpen)
 
   const handleUnlock = (node: TechNode) => {
     const { canUnlock } = TechRegistry.canUnlock(node.id, currentData)

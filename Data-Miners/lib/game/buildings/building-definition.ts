@@ -1,4 +1,5 @@
 import type { TerrainType } from "../types"
+import { createDefinitionFactory } from "../registry"
 
 /**
  * Base interface for all building definitions
@@ -88,11 +89,4 @@ export function cloneStats(stats: BuildingStats): BuildingStats {
 /**
  * Creates a building definition with current stats initialized from base stats
  */
-export function createBuildingDefinition(
-  partial: Omit<BuildingDefinition, "stats"> & { stats?: BuildingStats },
-): BuildingDefinition {
-  return {
-    ...partial,
-    stats: partial.stats ?? cloneStats(partial.baseStats),
-  }
-}
+export const createBuildingDefinition = createDefinitionFactory<BuildingStats, BuildingDefinition>(cloneStats)
