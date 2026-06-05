@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
 
     // Profile API route
     Route::get('/api/profile', [UserController::class, 'profileApi'])->name('api.profile');
+    Route::put('/api/profile/equipped-cosmetics', [UserController::class, 'updateEquippedCosmetics'])->name('api.profile.equipped-cosmetics');
 
     // Game result API route
     Route::post('/api/game-results', [GameResultController::class, 'store'])->name('game-results.store');

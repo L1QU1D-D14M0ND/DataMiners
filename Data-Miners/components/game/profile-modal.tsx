@@ -32,6 +32,26 @@ interface ProfileData {
     experience_points: number
     credits: number
     rank_score: number
+    equipped_profile_picture?: {
+      id: number
+      name: string
+      cosmetic_type: string
+    }
+    equipped_frame?: {
+      id: number
+      name: string
+      cosmetic_type: string
+    }
+    equipped_card?: {
+      id: number
+      name: string
+      cosmetic_type: string
+    }
+    equipped_title?: {
+      id: number
+      name: string
+      cosmetic_type: string
+    }
   }
   sets: Set[]
   user_cosmetics: Cosmetic[]
@@ -46,6 +66,12 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedProfilePicture, setSelectedProfilePicture] = useState<number | null>(null)
+  const [selectedFrame, setSelectedFrame] = useState<number | null>(null)
+  const [selectedCard, setSelectedCard] = useState<number | null>(null)
+  const [selectedTitle, setSelectedTitle] = useState<number | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -59,12 +85,42 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     try {
       const response = await axios.get("/api/profile")
       setProfileData(response.data)
+      setSelectedProfilePicture(response.data.user.equipped_profile_picture?.id || null)
+      setSelectedFrame(response.data.user.equipped_frame?.id || null)
+      setSelectedCard(response.data.user.equipped_card?.id || null)
+      setSelectedTitle(response.data.user.equipped_title?.id || null)
     } catch (err) {
       console.error("Failed to fetch profile data:", err)
       setError("Failed to load profile data")
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSaveEquippedCosmetics = async () => {
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await axios.put("/api/profile/equipped-cosmetics", {
+        equipped_profile_picture_id: selectedProfilePicture,
+        equipped_frame_id: selectedFrame,
+        equipped_card_id: selectedCard,
+        equipped_title_id: selectedTitle,
+      })
+      await fetchProfileData()
+    } catch (err) {
+      console.error("Failed to update equipped cosmetics:", err)
+      setSaveError("Failed to update equipped cosmetics")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const getCosmeticsByType = (type: string) => {
+    if (!profileData) return []
+    return profileData.user_cosmetics.filter(
+      (cosmetic) => cosmetic.cosmetic_type.name === type && cosmetic.unlocked
+    )
   }
 
   return (
@@ -119,6 +175,148 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                       <span className="font-mono text-sm text-[#d4a853]">{profileData.user.rank_score}</span>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Profile Customization */}
+              <div className="ark-card p-4 space-y-3">
+                <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                  <Sparkles className="w-5 h-5 text-[#d4a853]" />
+                  <h3 className="font-heading text-sm tracking-wider text-white/90">PROFILE CUSTOMIZATION</h3>
+                </div>
+
+                {/* Profile Picture */}
+                <div className="space-y-2">
+                  <div className="font-serif italic text-xs text-white/40">PROFILE PICTURE</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button
+                      onClick={() => setSelectedProfilePicture(null)}
+                      className={`p-2 border text-center ${
+                        selectedProfilePicture === null
+                          ? "border-[#d4a853] bg-[#d4a853]/10"
+                          : "border-white/20 bg-black/30 hover:border-white/40"
+                      }`}
+                    >
+                      <div className="font-serif text-xs text-white/70">None</div>
+                    </button>
+                    {getCosmeticsByType("profile_picture").map((cosmetic) => (
+                      <button
+                        key={cosmetic.id}
+                        onClick={() => setSelectedProfilePicture(cosmetic.id)}
+                        className={`p-2 border text-center ${
+                          selectedProfilePicture === cosmetic.id
+                            ? "border-[#d4a853] bg-[#d4a853]/10"
+                            : "border-white/20 bg-black/30 hover:border-white/40"
+                        }`}
+                      >
+                        <div className="font-serif text-xs text-white/70">{cosmetic.name}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Frame */}
+                <div className="space-y-2">
+                  <div className="font-serif italic text-xs text-white/40">FRAME</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button
+                      onClick={() => setSelectedFrame(null)}
+                      className={`p-2 border text-center ${
+                        selectedFrame === null
+                          ? "border-[#d4a853] bg-[#d4a853]/10"
+                          : "border-white/20 bg-black/30 hover:border-white/40"
+                      }`}
+                    >
+                      <div className="font-serif text-xs text-white/70">None</div>
+                    </button>
+                    {getCosmeticsByType("frame").map((cosmetic) => (
+                      <button
+                        key={cosmetic.id}
+                        onClick={() => setSelectedFrame(cosmetic.id)}
+                        className={`p-2 border text-center ${
+                          selectedFrame === cosmetic.id
+                            ? "border-[#d4a853] bg-[#d4a853]/10"
+                            : "border-white/20 bg-black/30 hover:border-white/40"
+                        }`}
+                      >
+                        <div className="font-serif text-xs text-white/70">{cosmetic.name}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Card */}
+                <div className="space-y-2">
+                  <div className="font-serif italic text-xs text-white/40">CARD</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button
+                      onClick={() => setSelectedCard(null)}
+                      className={`p-2 border text-center ${
+                        selectedCard === null
+                          ? "border-[#d4a853] bg-[#d4a853]/10"
+                          : "border-white/20 bg-black/30 hover:border-white/40"
+                      }`}
+                    >
+                      <div className="font-serif text-xs text-white/70">None</div>
+                    </button>
+                    {getCosmeticsByType("card").map((cosmetic) => (
+                      <button
+                        key={cosmetic.id}
+                        onClick={() => setSelectedCard(cosmetic.id)}
+                        className={`p-2 border text-center ${
+                          selectedCard === cosmetic.id
+                            ? "border-[#d4a853] bg-[#d4a853]/10"
+                            : "border-white/20 bg-black/30 hover:border-white/40"
+                        }`}
+                      >
+                        <div className="font-serif text-xs text-white/70">{cosmetic.name}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Title */}
+                <div className="space-y-2">
+                  <div className="font-serif italic text-xs text-white/40">TITLE</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button
+                      onClick={() => setSelectedTitle(null)}
+                      className={`p-2 border text-center ${
+                        selectedTitle === null
+                          ? "border-[#d4a853] bg-[#d4a853]/10"
+                          : "border-white/20 bg-black/30 hover:border-white/40"
+                      }`}
+                    >
+                      <div className="font-serif text-xs text-white/70">None</div>
+                    </button>
+                    {getCosmeticsByType("title").map((cosmetic) => (
+                      <button
+                        key={cosmetic.id}
+                        onClick={() => setSelectedTitle(cosmetic.id)}
+                        className={`p-2 border text-center ${
+                          selectedTitle === cosmetic.id
+                            ? "border-[#d4a853] bg-[#d4a853]/10"
+                            : "border-white/20 bg-black/30 hover:border-white/40"
+                        }`}
+                      >
+                        <div className="font-serif text-xs text-white/70">{cosmetic.name}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={handleSaveEquippedCosmetics}
+                    disabled={saving}
+                    className="w-full py-2 px-4 bg-[#d4a853] hover:bg-[#b8933f] text-black font-heading text-sm tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? "Saving..." : "Save Changes"}
+                  </button>
+                  {saveError && (
+                    <div className="mt-2 text-center text-red-400 font-serif text-xs">{saveError}</div>
+                  )}
                 </div>
               </div>
 

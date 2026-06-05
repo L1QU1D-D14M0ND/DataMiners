@@ -261,6 +261,19 @@ class GameSessionController extends Controller
             return response()->json(['error' => 'Winner must be a participant'], 422);
         }
 
+        // Server-side validation: determine winner based on game state if available
+        // If both players have state, compare metrics to determine actual winner
+        $serverDeterminedWinner = $this->determineWinnerFromState($session);
+        if ($serverDeterminedWinner !== null && $serverDeterminedWinner !== $winnerId) {
+            Log::warning('Reported winner does not match server-determined winner', [
+                'match_id' => $matchId,
+                'reported_winner' => $winnerId,
+                'server_determined_winner' => $serverDeterminedWinner,
+                'reporting_user' => $user->id,
+            ]);
+            return response()->json(['error' => 'Winner does not match game state'], 422);
+        }
+
         $loserId = ($winnerId === $session->player1_id) ? $session->player2_id : $session->player1_id;
 
         $session->update([
@@ -281,5 +294,36 @@ class GameSessionController extends Controller
         }
 
         return response()->json(['message' => 'Match end reported successfully']);
+    }
+
+    /**
+     * Determine winner from game state based on metrics
+     * Returns null if state is insufficient to determine winner
+     */
+    private function determineWinnerFromState(GameSession $session): ?int
+    {
+        $player1State = $session->player1_state;
+        $player2State = $session->player2_state;
+
+        // If both players have state, compare metrics
+        if ($player1State && $player2State) {
+            $p1Energy = $player1State['energy_generated'] ?? 0;
+            $p2Energy = $player2State['energy_generated'] ?? 0;
+            $p1Speed = $player1State['download_speed'] ?? 0;
+            $p2Speed = $player2State['download_speed'] ?? 0;
+
+            // Simple heuristic: higher energy and speed wins
+            // This can be refined based on actual game rules
+            $p1Score = $p1Energy + ($p1Speed * 10);
+            $p2Score = $p2Energy + ($p2Speed * 10);
+
+            if ($p1Score > $p2Score) {
+                return $session->player1_id;
+            } elseif ($p2Score > $p1Score) {
+                return $session->player2_id;
+            }
+        }
+
+        return null; // Cannot determine from state, trust client report
     }
 }

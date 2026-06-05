@@ -7,6 +7,7 @@ use App\Models\GameSession;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
@@ -226,75 +227,80 @@ class MatchmakingController extends Controller
         $skillRange = config('matchmaking.skill_range', 100);
         $maxWaitTime = config('matchmaking.max_wait_time', 60);
 
-        $queues = MatchmakingQueue::active()
-            ->byQueue($queueName)
-            ->where('created_at', '>=', now()->subSeconds($maxWaitTime))
-            ->orderBy('skill_rating')
-            ->get();
-
         $matches = [];
-        $processedIds = [];
 
-        foreach ($queues as $queue) {
-            if (in_array($queue->id, $processedIds)) {
-                continue;
-            }
+        // Use database transaction with pessimistic locking to prevent race conditions
+        DB::transaction(function () use ($queueName, $skillRange, $maxWaitTime, &$matches) {
+            $queues = MatchmakingQueue::active()
+                ->byQueue($queueName)
+                ->where('created_at', '>=', now()->subSeconds($maxWaitTime))
+                ->orderBy('skill_rating')
+                ->lockForUpdate()
+                ->get();
 
-            // Find opponents within skill range
-            $opponents = $queues->filter(function ($q) use ($queue, $skillRange, $processedIds) {
-                return $q->id !== $queue->id
-                    && !in_array($q->id, $processedIds)
-                    && abs($q->skill_rating - $queue->skill_rating) <= $skillRange;
-            })->take(1); // 1v1 for now, can be increased
+            $processedIds = [];
 
-            if ($opponents->count() > 0) {
-                $opponent = $opponents->first();
-                $matchId = uniqid('match_');
+            foreach ($queues as $queue) {
+                if (in_array($queue->id, $processedIds)) {
+                    continue;
+                }
 
-                try {
-                    // Create game session in database
-                    $gameSession = GameSession::create([
-                        'match_id' => $matchId,
-                        'player1_id' => $queue->user_id,
-                        'player2_id' => $opponent->user_id,
-                        'status' => 'active',
-                        'started_at' => now(),
-                    ]);
+                // Find opponents within skill range
+                $opponents = $queues->filter(function ($q) use ($queue, $skillRange, $processedIds) {
+                    return $q->id !== $queue->id
+                        && !in_array($q->id, $processedIds)
+                        && abs($q->skill_rating - $queue->skill_rating) <= $skillRange;
+                })->take(1); // 1v1 for now, can be increased
 
-                    // Create match data
-                    $matchData = [
-                        'match_id' => $matchId,
-                        'game_session_id' => $gameSession->id,
-                        'queue_name' => $queueName,
-                        'players' => [
-                            ['user_id' => $queue->user_id, 'skill_rating' => $queue->skill_rating],
-                            ['user_id' => $opponent->user_id, 'skill_rating' => $opponent->skill_rating],
-                        ],
-                        'created_at' => now()->toISOString(),
-                    ];
+                if ($opponents->count() > 0) {
+                    $opponent = $opponents->first();
+                    $matchId = uniqid('match_');
 
-                    // Store match in Redis for both players
-                    Redis::setex("match:{$queue->id}", 3600, json_encode($matchData));
-                    Redis::setex("match:{$opponent->id}", 3600, json_encode($matchData));
+                    try {
+                        // Create game session in database
+                        $gameSession = GameSession::create([
+                            'match_id' => $matchId,
+                            'player1_id' => $queue->user_id,
+                            'player2_id' => $opponent->user_id,
+                            'status' => 'active',
+                            'started_at' => now(),
+                        ]);
 
-                    // Mark as matched
-                    $queue->update(['status' => 'matched', 'matched_at' => now()]);
-                    $opponent->update(['status' => 'matched', 'matched_at' => now()]);
+                        // Create match data
+                        $matchData = [
+                            'match_id' => $matchId,
+                            'game_session_id' => $gameSession->id,
+                            'queue_name' => $queueName,
+                            'players' => [
+                                ['user_id' => $queue->user_id, 'skill_rating' => $queue->skill_rating],
+                                ['user_id' => $opponent->user_id, 'skill_rating' => $opponent->skill_rating],
+                            ],
+                            'created_at' => now()->toISOString(),
+                        ];
 
-                    $processedIds[] = $queue->id;
-                    $processedIds[] = $opponent->id;
+                        // Store match in Redis for both players
+                        Redis::setex("match:{$queue->id}", 3600, json_encode($matchData));
+                        Redis::setex("match:{$opponent->id}", 3600, json_encode($matchData));
 
-                    $matches[] = $matchData;
-                } catch (\Exception $e) {
-                    Log::error('Failed to create match', [
-                        'match_id' => $matchId,
-                        'player1' => $queue->user_id,
-                        'player2' => $opponent->user_id,
-                        'error' => $e->getMessage(),
-                    ]);
+                        // Mark as matched
+                        $queue->update(['status' => 'matched', 'matched_at' => now()]);
+                        $opponent->update(['status' => 'matched', 'matched_at' => now()]);
+
+                        $processedIds[] = $queue->id;
+                        $processedIds[] = $opponent->id;
+
+                        $matches[] = $matchData;
+                    } catch (\Exception $e) {
+                        Log::error('Failed to create match', [
+                            'match_id' => $matchId,
+                            'player1' => $queue->user_id,
+                            'player2' => $opponent->user_id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
             }
-        }
+        });
 
         return $matches;
     }

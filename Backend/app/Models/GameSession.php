@@ -20,6 +20,7 @@ class GameSession extends Model
         'winner_id',
         'started_at',
         'ended_at',
+        'rewarded',
     ];
 
     protected $casts = [

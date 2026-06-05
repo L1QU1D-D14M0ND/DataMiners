@@ -100,7 +100,7 @@ class UserController extends Controller
     {
         $user = $request->user();
 
-        $user->load(['sets.cosmetics.cosmeticType', 'cosmetics.cosmeticType']);
+        $user->load(['sets.cosmetics.cosmeticType', 'cosmetics.cosmeticType', 'equippedProfilePicture', 'equippedFrame', 'equippedCard', 'equippedTitle']);
 
         return response()->json([
             'user' => [
@@ -110,6 +110,26 @@ class UserController extends Controller
                 'experience_points' => $user->experience_points ?? 0,
                 'credits' => $user->credits ?? 0,
                 'rank_score' => $user->rank_score ?? 0,
+                'equipped_profile_picture' => $user->equippedProfilePicture ? [
+                    'id' => $user->equippedProfilePicture->id,
+                    'name' => $user->equippedProfilePicture->name,
+                    'cosmetic_type' => $user->equippedProfilePicture->cosmeticType?->name,
+                ] : null,
+                'equipped_frame' => $user->equippedFrame ? [
+                    'id' => $user->equippedFrame->id,
+                    'name' => $user->equippedFrame->name,
+                    'cosmetic_type' => $user->equippedFrame->cosmeticType?->name,
+                ] : null,
+                'equipped_card' => $user->equippedCard ? [
+                    'id' => $user->equippedCard->id,
+                    'name' => $user->equippedCard->name,
+                    'cosmetic_type' => $user->equippedCard->cosmeticType?->name,
+                ] : null,
+                'equipped_title' => $user->equippedTitle ? [
+                    'id' => $user->equippedTitle->id,
+                    'name' => $user->equippedTitle->name,
+                    'cosmetic_type' => $user->equippedTitle->cosmeticType?->name,
+                ] : null,
             ],
             'sets' => $user->sets->map(function ($set) {
                 return [
@@ -144,5 +164,40 @@ class UserController extends Controller
                 ];
             }),
         ]);
+    }
+
+    /**
+     * API: Update equipped cosmetics for authenticated user.
+     */
+    public function updateEquippedCosmetics(Request $request)
+    {
+        $validated = $request->validate([
+            'equipped_profile_picture_id' => 'nullable|exists:cosmetics,id',
+            'equipped_frame_id' => 'nullable|exists:cosmetics,id',
+            'equipped_card_id' => 'nullable|exists:cosmetics,id',
+            'equipped_title_id' => 'nullable|exists:cosmetics,id',
+        ]);
+
+        $user = $request->user();
+
+        // Verify that the user owns the cosmetics they're trying to equip
+        $userCosmeticIds = $user->cosmetics->pluck('id')->toArray();
+
+        if ($validated['equipped_profile_picture_id'] && !in_array($validated['equipped_profile_picture_id'], $userCosmeticIds)) {
+            return response()->json(['error' => 'You do not own this profile picture'], 403);
+        }
+        if ($validated['equipped_frame_id'] && !in_array($validated['equipped_frame_id'], $userCosmeticIds)) {
+            return response()->json(['error' => 'You do not own this frame'], 403);
+        }
+        if ($validated['equipped_card_id'] && !in_array($validated['equipped_card_id'], $userCosmeticIds)) {
+            return response()->json(['error' => 'You do not own this card'], 403);
+        }
+        if ($validated['equipped_title_id'] && !in_array($validated['equipped_title_id'], $userCosmeticIds)) {
+            return response()->json(['error' => 'You do not own this title'], 403);
+        }
+
+        $user->update($validated);
+
+        return response()->json(['message' => 'Equipped cosmetics updated successfully']);
     }
 }

@@ -16,7 +16,7 @@ use App\Models\Deck;
 use App\Models\Set;
 use App\Models\GameLog;
 
-#[Fillable(['name', 'email', 'password', 'rank_score', 'experience_points', 'credits', 'play_time', 'role_id'])]
+#[Fillable(['name', 'email', 'password', 'rank_score', 'experience_points', 'credits', 'play_time', 'role_id', 'equipped_profile_picture_id', 'equipped_frame_id', 'equipped_card_id', 'equipped_title_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -109,5 +109,37 @@ class User extends Authenticatable
     public function gamesAsPlayerB()
     {
         return $this->hasMany(GameLog::class, 'user_b', 'id');
+    }
+
+    /**
+     * Get the equipped profile picture cosmetic.
+     */
+    public function equippedProfilePicture()
+    {
+        return $this->belongsTo(Cosmetic::class, 'equipped_profile_picture_id');
+    }
+
+    /**
+     * Get the equipped frame cosmetic.
+     */
+    public function equippedFrame()
+    {
+        return $this->belongsTo(Cosmetic::class, 'equipped_frame_id');
+    }
+
+    /**
+     * Get the equipped card cosmetic.
+     */
+    public function equippedCard()
+    {
+        return $this->belongsTo(Cosmetic::class, 'equipped_card_id');
+    }
+
+    /**
+     * Get the equipped title cosmetic.
+     */
+    public function equippedTitle()
+    {
+        return $this->belongsTo(Cosmetic::class, 'equipped_title_id');
     }
 }
