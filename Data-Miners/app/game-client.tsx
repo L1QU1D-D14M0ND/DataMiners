@@ -17,6 +17,8 @@ import { AuthButton } from "@/components/auth/auth-button"
 import { AuthError } from "@/components/auth/auth-error"
 import { AuthDecoration } from "@/components/auth/auth-decoration"
 
+const isDev = process.env.NODE_ENV === "development"
+
 const getAdminDashboardUrl = (redirectUrl?: string | null) => {
   const baseUrl = axios.defaults.baseURL ?? "http://localhost:8000"
 
@@ -67,6 +69,8 @@ export default function GameClient() {
   const [settings, setSettings] = useState<GameSettings>({
     volume: 0.7,
     soundEnabled: true,
+    musicVolume: 0.5,
+    musicEnabled: true,
   })
   const [user, setUser] = useState<UserProfile | null>(null)
   const [status, setStatus] = useState<"loading" | "guest" | "authenticated" | "admin_choice">("loading")
@@ -168,7 +172,9 @@ export default function GameClient() {
   }, [])
 
   const handleMatchFound = useCallback(async (foundMatchId: string, gameSessionId: number) => {
-    console.log("handleMatchFound called with:", foundMatchId, gameSessionId)
+    if (isDev) {
+      console.log("handleMatchFound called with:", foundMatchId, gameSessionId)
+    }
     try {
       // Initialize card mapping first
       const { initializeCardMapping, fetchDecks, toFrontendCardIds } = await import("@/lib/game/cards/card-mapping")
@@ -176,7 +182,9 @@ export default function GameClient() {
 
       // Fetch user's decks to get the default deck
       const backendDecks = await fetchDecks()
-      console.log("Fetched decks:", backendDecks)
+      if (isDev) {
+        console.log("Fetched decks:", backendDecks)
+      }
       const userDecks = backendDecks.map((bd: any) => ({
         id: bd.id,
         name: bd.name,
@@ -185,7 +193,9 @@ export default function GameClient() {
 
       // Use the first deck as default
       const defaultDeck = userDecks[0]
-      console.log("Default deck:", defaultDeck)
+      if (isDev) {
+        console.log("Default deck:", defaultDeck)
+      }
       if (defaultDeck) {
         setDeckIds(defaultDeck.cardIds)
       }
@@ -193,7 +203,9 @@ export default function GameClient() {
       setMatchId(foundMatchId)
       setInMatchmaking(false)
       setGameStarted(true)
-      console.log("Game started with matchId:", foundMatchId)
+      if (isDev) {
+        console.log("Game started with matchId:", foundMatchId)
+      }
     } catch (error) {
       console.error("Failed to load deck for match:", error)
       // Still start the game even if deck loading fails

@@ -167,8 +167,20 @@ export function GameUI({
     setRewardStatus("saving")
 
     try {
+      // include who is reporting the result when available
+      let reportingUserId: number | null = null
+      try {
+        const userJson = localStorage.getItem('user')
+        if (userJson) reportingUserId = JSON.parse(userJson)?.id ?? null
+      } catch (e) {
+        // ignore
+      }
+
       const response = await axios.post<RewardResponse>("/api/game-results", {
+        // include match identifier so backend can resolve the game session
+        match_id: matchId,
         outcome: result.outcome,
+        reporting_user_id: reportingUserId,
         stats: {
           time_elapsed_seconds: result.playerStats.timeElapsedSeconds,
           energy_generated: result.playerStats.energyGenerated,

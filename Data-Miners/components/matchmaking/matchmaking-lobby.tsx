@@ -6,6 +6,8 @@ import { matchmakingApi, type QueueStatus } from "@/lib/matchmaking"
 import { SoundManager } from "@/lib/game/sound-manager"
 import { formatDuration } from "@/lib/format"
 
+const isDev = process.env.NODE_ENV === "development"
+
 interface MatchmakingLobbyProps {
   onMatchFound: (matchId: string, gameSessionId: number) => void
   onCancel: () => void
@@ -48,11 +50,15 @@ export function MatchmakingLobby({ onMatchFound, onCancel, queueName = "default"
         consecutiveFailures = 0
         setStatus(queueStatus)
 
-        console.log("Queue status:", queueStatus)
+        if (isDev) {
+          console.log("Queue status:", queueStatus)
+        }
 
         if (queueStatus.matched && queueStatus.match_data) {
           // Match found!
-          console.log("Match found!", queueStatus.match_data)
+          if (isDev) {
+            console.log("Match found!", queueStatus.match_data)
+          }
           if (pollInterval) clearInterval(pollInterval)
           SoundManager.playSuccess()
           onMatchFound(queueStatus.match_data.match_id, queueStatus.match_data.game_session_id)

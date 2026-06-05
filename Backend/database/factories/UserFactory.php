@@ -25,7 +25,7 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-        $playerRole = \App\Models\Role::where('name', 'Player')->first();
+        $playerRole = \App\Models\Role::firstOrCreate(['name' => 'Player']);
 
         return [
             'name' => fake()->name(),

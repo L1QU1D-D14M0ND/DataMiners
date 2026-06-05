@@ -5,6 +5,7 @@ import { BuildingRegistry } from "../buildings"
 import { TileRegistry } from "../tiles"
 import { TechRegistry } from "../tech"
 import { SoundManager } from "../sound-manager"
+import { BackgroundMusicManager } from "../background-music-manager"
 import axios from "@/lib/axios"
 
 const TILE_SIZE = 32
@@ -76,6 +77,7 @@ export class GameScene extends Phaser.Scene {
     this.setupCameraPan()
     this.centerCameraOnGrid()
     this.setupTechListener() // Add tech listener
+    this.startBackgroundMusic()
   }
 
   private addWindowListener<T extends Event>(type: string, listener: (event: T) => void) {
@@ -96,6 +98,7 @@ export class GameScene extends Phaser.Scene {
       cleanup()
     }
 
+    BackgroundMusicManager.stop()
     this.cleanupCallbacks = []
     this.cleanupComplete = true
   }
@@ -822,7 +825,7 @@ export class GameScene extends Phaser.Scene {
 
       // Report match end to backend if in PvP
       if (this.matchId) {
-        this.reportMatchEndWithRetry(this.matchId)
+          this.reportMatchEndWithRetry(this.matchId, 'win')
       }
 
       window.dispatchEvent(
@@ -1134,10 +1137,22 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private async reportMatchEndWithRetry(matchId: string, retries = 2) {
+  private async reportMatchEndWithRetry(matchId: string, outcome: string = 'win', retries = 2) {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        await axios.post(`/api/game-sessions/${matchId}/report-end`)
+        // include the current user's id as `winner_id` so backend validation passes
+        let winnerId: number | null = null
+        try {
+          const userJson = localStorage.getItem('user')
+          if (userJson) {
+            const user = JSON.parse(userJson)
+            winnerId = user?.id ?? null
+          }
+        } catch (e) {
+          // ignore parse errors and let backend respond if missing
+        }
+
+        await axios.post(`/api/game-sessions/${matchId}/report-end`, { winner_id: winnerId, outcome, reporting_user_id: winnerId })
         return
       } catch (error) {
         console.error(`Failed to report match end (attempt ${attempt + 1}/${retries + 1}):`, error)
@@ -1173,6 +1188,17 @@ export class GameScene extends Phaser.Scene {
       })
     } catch (error) {
       console.error('Failed to report card usage:', error)
+    }
+  }
+
+  private startBackgroundMusic() {
+    try {
+      BackgroundMusicManager.loadTrack("/audio/background-music.mp3")
+      BackgroundMusicManager.play()
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[GameScene] Failed to start background music:", error)
+      }
     }
   }
 }

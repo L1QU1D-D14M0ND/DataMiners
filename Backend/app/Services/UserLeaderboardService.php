@@ -40,6 +40,7 @@ class UserLeaderboardService
                 'rank' => $index + 1,
                 'user_id' => $user->id,
                 'name' => $user->name,
+                'email' => $user->email,
                 'rank_score' => $user->rank_score,
                 'experience_points' => $user->experience_points,
                 'credits' => $user->credits,

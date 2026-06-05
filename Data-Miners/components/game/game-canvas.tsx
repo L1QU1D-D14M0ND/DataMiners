@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import * as Phaser from "phaser"
 import { GameScene } from "@/lib/game/scenes/game-scene"
 import { GameUI } from "./game-ui"
+import { BackgroundMusicManager } from "@/lib/game/background-music-manager"
 import type { GameState, GameSettings, SelectedTool } from "@/lib/game/types"
 
 interface GameCanvasProps {
@@ -23,6 +24,12 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("gameSettingsUpdate", { detail: settings }))
   }, [settings])
+
+  // Handle background music settings
+  useEffect(() => {
+    BackgroundMusicManager.setVolume(settings.musicVolume)
+    BackgroundMusicManager.setEnabled(settings.musicEnabled)
+  }, [settings.musicVolume, settings.musicEnabled])
 
   // Pass deck IDs to the game scene when they change
   useEffect(() => {
@@ -63,6 +70,23 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
     const handleStateUpdate = (event: Event) => setGameState((event as CustomEvent<GameState>).detail)
     window.addEventListener("gameStateUpdate", handleStateUpdate)
 
+    const handleOpponentStateUpdate = (event: Event) => {
+      const detail = (event as CustomEvent).detail
+      setGameState((prev) =>
+        prev
+          ? {
+              ...prev,
+              opponentState: {
+                downloadSpeed: detail.downloadSpeed,
+                energyGenerated: detail.energyGenerated,
+                updatedAt: detail.updatedAt,
+              },
+            }
+          : prev
+      )
+    }
+    window.addEventListener("opponentStateUpdate", handleOpponentStateUpdate)
+
     const handleDeselect = () => setSelectedTool(null)
     window.addEventListener("deselectTool", handleDeselect)
 
@@ -72,6 +96,7 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
 
     return () => {
       window.removeEventListener("gameStateUpdate", handleStateUpdate)
+      window.removeEventListener("opponentStateUpdate", handleOpponentStateUpdate)
       window.removeEventListener("deselectTool", handleDeselect)
       window.removeEventListener("keyboardToolChange", handleKeyboardToolChange)
       gameRef.current?.destroy(true)

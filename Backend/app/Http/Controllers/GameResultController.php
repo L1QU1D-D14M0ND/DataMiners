@@ -6,6 +6,7 @@ use App\Models\GameSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GameResultController extends Controller
 {
@@ -15,8 +16,12 @@ class GameResultController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        // Accept either a numeric `game_session_id` or a string `match_id` (frontend may only have match id)
+        Log::info('GameResult.store called', ['payload' => $request->all()]);
+
         $validated = $request->validate([
-            'game_session_id' => ['required', 'integer', 'exists:game_sessions,id'],
+            'game_session_id' => ['nullable', 'integer', 'exists:game_sessions,id'],
+            'match_id' => ['nullable', 'string', 'exists:game_sessions,match_id'],
             'outcome' => ['required', 'string', 'in:win,loss'],
             'stats' => ['nullable', 'array'],
             'stats.time_elapsed_seconds' => ['nullable', 'integer', 'min:0'],
@@ -25,16 +30,32 @@ class GameResultController extends Controller
         ]);
 
         $user = $request->user();
+        Log::info('GameResult.store user', ['user_id' => $user?->id ?? null, 'validated' => $validated]);
 
         // Validate the session exists, belongs to the user, and is completed
-        $session = GameSession::where('id', $validated['game_session_id'])
-            ->where('status', 'completed')
-            ->where(function ($query) use ($user) {
-                $query->where('player1_id', $user->id)
-                    ->orWhere('player2_id', $user->id);
-            })
-            ->lockForUpdate()
-            ->first();
+$session = null;
+        if (!empty($validated['game_session_id']) || !empty($validated['match_id'])) {
+            // Resolve session by id or by match_id (match_id is used by the frontend)
+            $sessionQuery = GameSession::where('status', 'completed')
+                ->where(function ($query) use ($user) {
+                    $query->where('player1_id', $user->id)
+                        ->orWhere('player2_id', $user->id);
+                });
+
+            if (!empty($validated['game_session_id'])) {
+                $sessionQuery->where('id', $validated['game_session_id']);
+            }
+
+            if (!empty($validated['match_id'])) {
+                $sessionQuery->where('match_id', $validated['match_id']);
+            }
+
+            $session = $sessionQuery->lockForUpdate()->first();
+
+            if (!$session) {
+                return response()->json(['error' => 'Invalid game session or session not completed'], 404);
+            }
+        }
 
         if (!$session) {
             return response()->json(['error' => 'Invalid game session or session not completed'], 404);
@@ -73,11 +94,11 @@ class GameResultController extends Controller
 
     /**
      * Loss rewards are rounded down because user rank_score is an integer column.
-     * Losses decrease rank score to make it a meaningful competitive metric.
+     * Losses receive half of the full reward value, not a negative penalty.
      */
     private function rewardForOutcome(string $outcome): array
     {
-        $multiplier = $outcome === 'win' ? 1 : -0.5;
+        $multiplier = $outcome === 'win' ? 1 : 0.5;
 
         return [
             'experience' => (int) floor(self::WIN_EXPERIENCE_REWARD * $multiplier),

@@ -11,6 +11,8 @@ interface SettingsModalProps {
   settings: {
     soundEnabled: boolean
     volume: number
+    musicEnabled: boolean
+    musicVolume: number
   }
   onSettingsChange: (settings: SettingsModalProps["settings"]) => void
   onReturnToMenu?: () => void
@@ -96,6 +98,50 @@ export function SettingsModal({
             className="w-full h-2 cursor-pointer"
             disabled={!settings.soundEnabled}
             aria-label="Volume"
+          />
+        </div>
+
+        {/* Music toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {settings.musicEnabled ? (
+              <Volume2 className="w-5 h-5 text-white/60" />
+            ) : (
+              <VolumeX className="w-5 h-5 text-white/40" />
+            )}
+            <span className="text-sm font-heading uppercase tracking-wider text-white/80">Background Music</span>
+          </div>
+          <button
+            onClick={() => onSettingsChange({ ...settings, musicEnabled: !settings.musicEnabled })}
+            className={`w-12 h-6 transition-colors ${settings.musicEnabled ? "bg-[#d4a853]" : "bg-white/20"}`}
+            style={{ clipPath: "polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%)" }}
+            role="switch"
+            aria-checked={settings.musicEnabled}
+            aria-label="Toggle background music"
+          >
+            <div
+              className={`w-4 h-4 bg-white transition-transform ${settings.musicEnabled ? "translate-x-6" : "translate-x-1"}`}
+              style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0 50%)" }}
+            />
+          </button>
+        </div>
+
+        {/* Music volume slider */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-heading uppercase tracking-wider text-white/80">Music Volume</span>
+            <span className="font-mono text-sm text-[#d4a853]">{Math.round(settings.musicVolume * 100)}%</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={settings.musicVolume}
+            onChange={(e) => onSettingsChange({ ...settings, musicVolume: parseFloat(e.target.value) })}
+            className="w-full h-2 cursor-pointer"
+            disabled={!settings.musicEnabled}
+            aria-label="Music volume"
           />
         </div>
 

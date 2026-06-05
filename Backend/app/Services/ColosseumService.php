@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Events\MatchEnded;
+use App\Models\GameSession;
+use App\Models\MatchmakingQueue;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -15,9 +18,9 @@ class ColosseumService
     public function __construct()
     {
         $this->enabled = config('matchmaking.colosseum.enabled', false);
-        $this->apiKey = config('matchmaking.colosseum.api_key', '');
-        $this->apiUrl = config('matchmaking.colosseum.api_url', 'https://api.colosseum.gg');
-        $this->timeout = config('matchmaking.colosseum.timeout', 30);
+        $this->apiKey = config('matchmaking.colosseum.api_key') ?? '';
+        $this->apiUrl = config('matchmaking.colosseum.api_url', 'https://api.colosseum.gg') ?? 'https://api.colosseum.gg';
+        $this->timeout = config('matchmaking.colosseum.timeout', 30) ?? 30;
     }
 
     /**
@@ -270,17 +273,77 @@ class ColosseumService
      */
     public function handleWebhook(array $payload): bool
     {
-        // Validate webhook signature if needed
-        // Process match notifications
-        // Update local database with match results
+        $event = $payload['event'] ?? null;
+        $matchId = $payload['match_id'] ?? null;
 
         Log::info('Colosseum webhook received', ['payload' => $payload]);
 
-        // TODO: Implement webhook processing logic
-        // - Extract match ID
-        // - Update matchmaking queue status
-        // - Notify players via WebSocket or polling
-        // - Create match record in database
+        if (empty($matchId)) {
+            Log::warning('Colosseum webhook missing match_id', ['payload' => $payload]);
+            return false;
+        }
+
+        $session = GameSession::byMatch($matchId)->first();
+
+        if ($event === 'match_found') {
+            $player1Id = isset($payload['player1_id']) ? (int) $payload['player1_id'] : null;
+            $player2Id = isset($payload['player2_id']) ? (int) $payload['player2_id'] : null;
+
+            if ($player1Id && $player2Id) {
+                if (!$session) {
+                    GameSession::create([
+                        'match_id' => $matchId,
+                        'player1_id' => $player1Id,
+                        'player2_id' => $player2Id,
+                        'status' => 'active',
+                        'started_at' => now(),
+                    ]);
+                } else {
+                    $session->update([
+                        'status' => 'active',
+                        'started_at' => $session->started_at ?? now(),
+                    ]);
+                }
+
+                MatchmakingQueue::whereIn('user_id', [$player1Id, $player2Id])
+                    ->where('status', 'waiting')
+                    ->update([
+                        'status' => 'matched',
+                        'matched_at' => now(),
+                    ]);
+            }
+
+            return true;
+        }
+
+        $winnerId = isset($payload['winner_id']) ? (int) $payload['winner_id'] : null;
+        $status = $payload['status'] ?? null;
+
+        if ($session && $session->status !== 'completed' && ($winnerId || $status === 'completed')) {
+            $winnerId = $winnerId ?: $session->winner_id;
+
+            if ($winnerId && in_array($winnerId, [$session->player1_id, $session->player2_id], true)) {
+                $loserId = $session->player1_id === $winnerId ? $session->player2_id : $session->player1_id;
+
+                $session->update([
+                    'status' => 'completed',
+                    'winner_id' => $winnerId,
+                    'ended_at' => now(),
+                ]);
+
+                try {
+                    broadcast(new MatchEnded($matchId, $winnerId, $loserId));
+                } catch (\Exception $e) {
+                    Log::error('Failed to broadcast Colosseum webhook match ended event', [
+                        'match_id' => $matchId,
+                        'winner_id' => $winnerId,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            return true;
+        }
 
         return true;
     }

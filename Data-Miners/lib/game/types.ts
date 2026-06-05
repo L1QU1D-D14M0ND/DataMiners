@@ -92,6 +92,8 @@ export type SelectedTool = BuildingType | "delete" | null
 export interface GameSettings {
   volume: number
   soundEnabled: boolean
+  musicVolume: number
+  musicEnabled: boolean
 }
 
 export interface PathNode {

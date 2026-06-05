@@ -25,6 +25,12 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'password',
         ]);
 
+        file_put_contents(storage_path('logs/registration-debug.txt'), json_encode([
+            'status' => $response->status(),
+            'headers' => $response->headers->all(),
+            'content' => substr($response->getContent(), 0, 2000),
+        ], JSON_PRETTY_PRINT));
+
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
     }

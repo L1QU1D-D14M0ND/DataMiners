@@ -237,6 +237,12 @@ class GameSessionController extends Controller
      */
     public function reportMatchEnd(Request $request, string $matchId): JsonResponse
     {
+        Log::info('GameSession.reportMatchEnd called', [
+            'match_id' => $matchId,
+            'payload' => $request->all(),
+            'reporting_user' => Auth::id(),
+        ]);
+
         $request->validate([
             'winner_id' => 'required|exists:users,id',
         ]);

@@ -20,9 +20,20 @@ class GameResultTest extends TestCase
             'rank_score' => 1,
         ]);
 
+        $opponent = User::factory()->create();
+
+        $gameSession = \App\Models\GameSession::create([
+            'match_id' => 'match-win-1',
+            'player1_id' => $user->id,
+            'player2_id' => $opponent->id,
+            'status' => 'completed',
+            'rewarded' => false,
+        ]);
+
         $response = $this
             ->actingAs($user)
             ->postJson('/api/game-results', [
+                'match_id' => $gameSession->match_id,
                 'outcome' => 'win',
                 'stats' => [
                     'time_elapsed_seconds' => 123,
@@ -53,9 +64,20 @@ class GameResultTest extends TestCase
             'rank_score' => 1,
         ]);
 
+        $opponent = User::factory()->create();
+
+        $gameSession = \App\Models\GameSession::create([
+            'match_id' => 'match-loss-1',
+            'player1_id' => $user->id,
+            'player2_id' => $opponent->id,
+            'status' => 'completed',
+            'rewarded' => false,
+        ]);
+
         $response = $this
             ->actingAs($user)
             ->postJson('/api/game-results', [
+                'match_id' => $gameSession->match_id,
                 'outcome' => 'loss',
             ]);
 
