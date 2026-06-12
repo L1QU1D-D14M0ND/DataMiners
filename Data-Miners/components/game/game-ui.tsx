@@ -346,10 +346,18 @@ export function GameUI({
 
     // Listen for card usage from opponent
     const unsubscribeCardUsed = wsClient.onCardUsed((data: CardUsageEvent) => {
-      // Dispatch event for notification
-      window.dispatchEvent(new CustomEvent('opponentCardUsed', {
-        detail: data
-      }))
+      // Get current user ID to filter out own card usage
+      const userData = localStorage.getItem('user')
+      if (!userData) return
+
+      const user = JSON.parse(userData)
+      
+      // Only dispatch notification if card was used by opponent, not current user
+      if (user.id !== data.userId) {
+        window.dispatchEvent(new CustomEvent('opponentCardUsed', {
+          detail: data
+        }))
+      }
     })
 
     return () => {
