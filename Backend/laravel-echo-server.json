@@ -1,7 +1,12 @@
 {
 	"authHost": "http://localhost",
 	"authEndpoint": "/broadcasting/auth",
-	"clients": [],
+	"clients": [
+		{
+			"appId": "data-miners-key",
+			"key": "data-miners-key"
+		}
+	],
 	"database": "redis",
 	"databaseConfig": {
 		"redis": {

@@ -41,7 +41,7 @@ class WebSocketClient {
       wsPort: process.env.NEXT_PUBLIC_PUSHER_PORT ? parseInt(process.env.NEXT_PUBLIC_PUSHER_PORT) : 6001,
       wssPort: process.env.NEXT_PUBLIC_PUSHER_PORT ? parseInt(process.env.NEXT_PUBLIC_PUSHER_PORT) : 6001,
       forceTLS: process.env.NEXT_PUBLIC_PUSHER_SCHEME === 'https',
-      enabledTransports: ['ws', 'wss'],
+      enabledTransports: ['ws'],
       authEndpoint: `${backendUrl}/broadcasting/auth`,
       auth: {
         headers: {
