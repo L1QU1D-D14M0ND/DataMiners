@@ -1,5 +1,5 @@
 // Background Music Manager - Handles looping background music playback
-// Supports mp3, ogg, wav formats with independent volume control from UI SFX
+// Supports wav format only with independent volume control from UI SFX
 
 class BackgroundMusicManagerClass {
   private audioElement: HTMLAudioElement | null = null
@@ -43,6 +43,13 @@ class BackgroundMusicManagerClass {
 
   loadTrack(src: string) {
     if (!this.audioElement) return
+
+    if (!src.toLowerCase().endsWith('.wav')) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[BackgroundMusicManager] Only .wav files are supported")
+      }
+      return
+    }
 
     try {
       this.audioElement.src = src

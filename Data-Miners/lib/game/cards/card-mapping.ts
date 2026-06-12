@@ -1,18 +1,6 @@
 import axios from "@/lib/axios"
 import { ALL_CARDS, type GameCard, getCardById } from "./card-types"
-
-export interface BackendDeck {
-  id: number
-  name: string
-  card_ids: number[]
-}
-
-export interface BackendCard {
-  id: number
-  name: string
-  experience_unlock: number | null
-  credits_unlock: number | null
-}
+import type { Card, Deck, CreateDeckRequest, UpdateDeckRequest } from "@/lib/api-types"
 
 // Dynamic mapping between frontend card IDs and backend card IDs
 // Built by fetching cards from the backend and matching by name
@@ -27,8 +15,8 @@ export async function initializeCardMapping(force = false): Promise<void> {
   }
 
   try {
-    const response = await axios.get("/api/cards")
-    const backendCards: BackendCard[] = response.data
+    const response = await axios.get<Card[]>("/api/cards")
+    const backendCards: Card[] = response.data
 
     // Build mapping by matching card names.
     FRONTEND_TO_BACKEND = {}
@@ -101,29 +89,29 @@ export function getFrontendCardId(backendId: number): string | undefined {
 }
 
 // Deck API functions
-export async function fetchDecks(): Promise<BackendDeck[]> {
-  const response = await axios.get("/api/decks")
+export async function fetchDecks(): Promise<Deck[]> {
+  const response = await axios.get<Deck[]>("/api/decks")
   return response.data
 }
 
-export async function createDeck(name: string, cardIds: string[]): Promise<BackendDeck> {
+export async function createDeck(name: string, cardIds: string[]): Promise<Deck> {
   const backendCardIds = toBackendCardIds(cardIds)
-  const response = await axios.post("/api/decks", {
+  const response = await axios.post<Deck>("/api/decks", {
     name,
     card_ids: backendCardIds,
-  })
+  } as CreateDeckRequest)
   return response.data
 }
 
-export async function updateDeck(deckId: number, name: string, cardIds: string[]): Promise<BackendDeck> {
+export async function updateDeck(deckId: number, name: string, cardIds: string[]): Promise<Deck> {
   const backendCardIds = toBackendCardIds(cardIds)
-  const response = await axios.put(`/api/decks/${deckId}`, {
+  const response = await axios.put<Deck>(`/api/decks/${deckId}`, {
     name,
     card_ids: backendCardIds,
-  })
+  } as UpdateDeckRequest)
   return response.data
 }
 
 export async function deleteDeck(deckId: number): Promise<void> {
-  await axios.delete(`/api/decks/${deckId}`)
+  await axios.delete<void>(`/api/decks/${deckId}`)
 }

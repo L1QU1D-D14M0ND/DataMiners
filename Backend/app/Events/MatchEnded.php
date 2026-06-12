@@ -2,9 +2,7 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -46,5 +44,18 @@ class MatchEnded implements ShouldBroadcast
     public function broadcastAs(): string
     {
         return 'match.ended';
+    }
+
+    /**
+     * Get the data to broadcast.
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'matchId' => $this->matchId,
+            'winnerId' => $this->winnerId,
+            'loserId' => $this->loserId,
+            'timestamp' => $this->timestamp,
+        ];
     }
 }

@@ -1,60 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { User, Star, Coins, Trophy, Sparkles, Lock, Unlock } from "lucide-react"
 import axios from "@/lib/axios"
 import { GameModal } from "./game-modal"
-
-interface Cosmetic {
-  id: number
-  name: string
-  experience_unlock: number | null
-  credits_unlock: number | null
-  unlocked: boolean
-  cosmetic_type: {
-    id: number
-    name: string
-  }
-}
-
-interface Set {
-  id: number
-  set_name: string
-  cosmetics: Cosmetic[]
-}
-
-interface ProfileData {
-  user: {
-    id: number
-    name: string
-    email: string
-    experience_points: number
-    credits: number
-    rank_score: number
-    equipped_profile_picture?: {
-      id: number
-      name: string
-      cosmetic_type: string
-    }
-    equipped_frame?: {
-      id: number
-      name: string
-      cosmetic_type: string
-    }
-    equipped_card?: {
-      id: number
-      name: string
-      cosmetic_type: string
-    }
-    equipped_title?: {
-      id: number
-      name: string
-      cosmetic_type: string
-    }
-  }
-  sets: Set[]
-  user_cosmetics: Cosmetic[]
-}
+import { calculateLevelInfo } from "@/lib/level-utils"
+import type { ProfileResponse, Cosmetic, CosmeticSet, EquippedCosmeticsRequest } from "@/lib/api-types"
 
 type CosmeticTypeKey = "profile_picture" | "frame" | "card" | "title"
 
@@ -80,7 +31,7 @@ interface ProfileModalProps {
 }
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const [profileData, setProfileData] = useState<ProfileData | null>(null)
+  const [profileData, setProfileData] = useState<ProfileResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedCosmetics, setSelectedCosmetics] = useState<SelectedCosmetics>({
@@ -102,13 +53,13 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     setLoading(true)
     setError(null)
     try {
-      const response = await axios.get("/api/profile")
+      const response = await axios.get<ProfileResponse>("/api/profile")
       setProfileData(response.data)
       setSelectedCosmetics({
-        profile_picture: response.data.user.equipped_profile_picture?.id ?? null,
-        frame: response.data.user.equipped_frame?.id ?? null,
-        card: response.data.user.equipped_card?.id ?? null,
-        title: response.data.user.equipped_title?.id ?? null,
+        profile_picture: response.data.user.equipped_profile_picture?.id || null,
+        frame: response.data.user.equipped_frame?.id || null,
+        card: response.data.user.equipped_card?.id || null,
+        title: response.data.user.equipped_title?.id || null,
       })
     } catch (err) {
       console.error("Failed to fetch profile data:", err)
@@ -122,14 +73,15 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     setSaving(true)
     setSaveError(null)
     try {
-      await axios.put(
+      const payload: EquippedCosmeticsRequest = {
+        equipped_profile_picture_id: selectedCosmetics.profile_picture,
+        equipped_frame_id: selectedCosmetics.frame,
+        equipped_card_id: selectedCosmetics.card,
+        equipped_title_id: selectedCosmetics.title,
+      }
+      await axios.put<EquippedCosmeticsRequest>(
         "/api/profile/equipped-cosmetics",
-        Object.fromEntries(
-          cosmeticSections.map((section) => [
-            cosmeticFieldKeys[section.key],
-            selectedCosmetics[section.key],
-          ])
-        )
+        payload
       )
       await fetchProfileData()
     } catch (err) {
@@ -148,6 +100,11 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     profileData?.user_cosmetics.filter(
       (cosmetic) => cosmetic.cosmetic_type.name === type && cosmetic.unlocked
     ) ?? []
+
+  const levelInfo = useMemo(() => {
+    if (!profileData) return null
+    return calculateLevelInfo(profileData.user.experience_points)
+  }, [profileData?.user.experience_points])
 
   return (
     <GameModal
@@ -183,46 +140,27 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   <div>
                     <div className="font-serif italic text-xs text-white/40 mb-1">LEVEL</div>
                     <div>
-                      {/* Compute level and progress from total experience points
-                          Cumulative XP required to reach level L: 50 * sum_{k=1}^{L-1} k = 25 * L * (L-1)
-                          XP to next level from current level L: 50 * L */}
-                      {(() => {
-                        const totalXP: number = profileData.user.experience_points
+                      {levelInfo && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Star className="w-4 h-4 text-yellow-400" />
+                            <span className="font-mono text-sm text-[#d4a853]">Lv {levelInfo.level}</span>
+                          </div>
 
-                        const xpTotalForLevel = (L: number) => 25 * L * (L - 1)
-
-                        let level = 1
-                        while (xpTotalForLevel(level + 1) <= totalXP) {
-                          level += 1
-                        }
-
-                        const xpIntoLevel = totalXP - xpTotalForLevel(level)
-                        const xpForNext = 50 * level
-                        const xpRemaining = Math.max(0, xpForNext - xpIntoLevel)
-                        const progress = xpForNext > 0 ? Math.min(1, Math.max(0, xpIntoLevel / xpForNext)) : 0
-
-                        return (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Star className="w-4 h-4 text-yellow-400" />
-                              <span className="font-mono text-sm text-[#d4a853]">Lv {level}</span>
+                          <div className="mt-2">
+                            <div className="w-full bg-white/10 h-2 rounded overflow-hidden">
+                              <div
+                                className="h-2 bg-[#d4a853] transition-all"
+                                style={{ width: `${Math.round(levelInfo.progress * 100)}%` }}
+                              />
                             </div>
-
-                            <div className="mt-2">
-                              <div className="w-full bg-white/10 h-2 rounded overflow-hidden">
-                                <div
-                                  className="h-2 bg-[#d4a853] transition-all"
-                                  style={{ width: `${Math.round(progress * 100)}%` }}
-                                />
-                              </div>
-                              <div className="flex items-center justify-between text-xs text-white/40 mt-1">
-                                <span className="font-mono">{xpIntoLevel} / {xpForNext} XP</span>
-                                <span>{xpRemaining} XP to next</span>
-                              </div>
+                            <div className="flex items-center justify-between text-xs text-white/40 mt-1">
+                              <span className="font-mono">{levelInfo.xpIntoLevel} / {levelInfo.xpForNext} XP</span>
+                              <span>{levelInfo.xpRemaining} XP to next</span>
                             </div>
                           </div>
-                        )
-                      })()}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>

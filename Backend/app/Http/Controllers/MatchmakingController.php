@@ -134,7 +134,7 @@ class MatchmakingController extends Controller
         }
 
         $queue = MatchmakingQueue::where('user_id', $user->id)
-            ->where('status', 'waiting')
+            ->whereIn('status', ['waiting', 'matched'])
             ->where('expires_at', '>', now())
             ->first();
 
@@ -241,10 +241,50 @@ class MatchmakingController extends Controller
             }
         }
 
-        $this->performMatchmaking($queue->queue_name);
+        // If queue is matched, check for match data in Redis
+        if ($queue->status === 'matched') {
+            try {
+                $matchData = Redis::get("match:{$queue->id}");
+            } catch (\Exception $e) {
+                Log::error('Redis error fetching match data for matched queue', [
+                    'queue_id' => $queue->id,
+                    'error' => $e->getMessage(),
+                ]);
+                $matchData = null;
+            }
+            if ($matchData) {
+                $match = json_decode($matchData, true);
+                if ($match === null) {
+                    Log::error('Failed to decode match data from Redis', [
+                        'queue_id' => $queue->id,
+                        'raw_data' => $matchData,
+                    ]);
+                } else {
+                    try {
+                        $this->removeFromRedisQueue($queue);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to remove matched queue from Redis', [
+                            'queue_id' => $queue->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                    return response()->json([
+                        'in_queue' => false,
+                        'matched' => true,
+                        'match_data' => $match,
+                    ]);
+                }
+            }
+        }
+
+        // Only perform matchmaking if queue is still waiting
+        if ($queue->status === 'waiting') {
+            $this->performMatchmaking($queue->queue_name);
+        }
 
         return response()->json([
-            'in_queue' => true,
+            'in_queue' => $queue->status === 'waiting',
+            'matched' => $queue->status === 'matched',
             'queue_id' => $queue->id,
             'queue_name' => $queue->queue_name,
             'skill_rating' => $queue->skill_rating,

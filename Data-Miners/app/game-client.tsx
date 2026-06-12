@@ -1,7 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { ArrowRight, Home, Lock, Mail, Settings, ShieldCheck, User, UserPlus } from "lucide-react"
 import { MainMenu } from "@/components/game/main-menu"
 import { MatchmakingLobby } from "@/components/matchmaking/matchmaking-lobby"
@@ -9,6 +9,7 @@ import type { GameSettings } from "@/lib/game/types"
 import axios from "@/lib/axios"
 import { isAxiosError } from "axios"
 import type { FormEvent } from "react"
+import type { UserResponse, LoginResponse, RegisterResponse, LogoutResponse, UserProfile, CsrfCookieResponse } from "@/lib/api-types"
 import { AuthBackground } from "@/components/auth/auth-background"
 import { AuthCard } from "@/components/auth/auth-card"
 import { AuthHeader } from "@/components/auth/auth-header"
@@ -54,13 +55,6 @@ const GameCanvas = dynamic(() => import("@/components/game/game-canvas"), {
   ),
 })
 
-interface UserProfile {
-  id: number
-  name: string
-  email: string
-  role: string
-}
-
 export default function GameClient() {
   const [gameStarted, setGameStarted] = useState(false)
   const [deckIds, setDeckIds] = useState<string[]>([])
@@ -86,12 +80,13 @@ export default function GameClient() {
   const [registerPasswordConfirmation, setRegisterPasswordConfirmation] = useState("")
   const [registerError, setRegisterError] = useState<string | null>(null)
   const [registerLoading, setRegisterLoading] = useState(false)
+  const isTransitioningToGame = useRef(false)
 
   const adminDashboardUrl = useMemo(() => getAdminDashboardUrl(pendingRedirectUrl), [pendingRedirectUrl])
 
   // Helper functions
   const fetchCsrfToken = useCallback(async () => {
-    await axios.get("/sanctum/csrf-cookie")
+    await axios.get<CsrfCookieResponse>("/sanctum/csrf-cookie")
   }, [])
 
   const getErrorMessage = useCallback((error: unknown, fallback: string): string => {
@@ -119,7 +114,7 @@ export default function GameClient() {
 
     async function fetchUser() {
       try {
-        const response = await axios.get("/spa/user")
+        const response = await axios.get<UserResponse>("/spa/user")
 
         if (!isMounted) return
 
@@ -175,6 +170,7 @@ export default function GameClient() {
     if (isDev) {
       console.log("handleMatchFound called with:", foundMatchId, gameSessionId)
     }
+    isTransitioningToGame.current = true
     try {
       // Initialize card mapping first
       const { initializeCardMapping, fetchDecks, toFrontendCardIds } = await import("@/lib/game/cards/card-mapping")
@@ -185,7 +181,7 @@ export default function GameClient() {
       if (isDev) {
         console.log("Fetched decks:", backendDecks)
       }
-      const userDecks = backendDecks.map((bd: any) => ({
+      const userDecks = backendDecks.map((bd) => ({
         id: bd.id,
         name: bd.name,
         cardIds: toFrontendCardIds(bd.card_ids),
@@ -201,8 +197,9 @@ export default function GameClient() {
       }
 
       setMatchId(foundMatchId)
-      setInMatchmaking(false)
       setGameStarted(true)
+      setInMatchmaking(false)
+      isTransitioningToGame.current = false
       if (isDev) {
         console.log("Game started with matchId:", foundMatchId)
       }
@@ -210,8 +207,9 @@ export default function GameClient() {
       console.error("Failed to load deck for match:", error)
       // Still start the game even if deck loading fails
       setMatchId(foundMatchId)
-      setInMatchmaking(false)
       setGameStarted(true)
+      setInMatchmaking(false)
+      isTransitioningToGame.current = false
     }
   }, [])
 
@@ -221,7 +219,7 @@ export default function GameClient() {
 
   const handleLogout = useCallback(async () => {
     try {
-      await axios.post("/spa/logout")
+      await axios.post<LogoutResponse>("/spa/logout")
     } catch (error) {
       console.error("Logout failed:", error)
     } finally {
@@ -241,7 +239,7 @@ export default function GameClient() {
     try {
       await fetchCsrfToken()
 
-      const response = await axios.post("/spa/login", {
+      const response = await axios.post<LoginResponse>("/spa/login", {
         email: loginEmail.trim(),
         password: loginPassword,
       })
@@ -280,7 +278,7 @@ export default function GameClient() {
     try {
       await fetchCsrfToken()
 
-      const response = await axios.post("/spa/register", {
+      const response = await axios.post<RegisterResponse>("/spa/register", {
         name: registerName.trim(),
         email: registerEmail.trim(),
         password: registerPassword,
@@ -506,7 +504,7 @@ export default function GameClient() {
     )
   }
 
-  if (!gameStarted) {
+  if (!gameStarted && !isTransitioningToGame.current) {
     return (
       <MainMenu
         onStartGame={handleStartGame}

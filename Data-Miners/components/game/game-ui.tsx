@@ -20,7 +20,8 @@ import { DataProgressBar } from "./data-progress-bar"
 import { TopBar } from "./top-bar"
 import { CardNotificationContainer } from "./card-notification"
 import axios from "@/lib/axios"
-import { getWebSocketClient, type GameStateUpdate, type CardUsageEvent, type MatchEndedEvent } from "@/lib/websocket-client"
+import { getWebSocketClient } from "@/lib/websocket-client"
+import type { GameResultResponse, ConcedeMatchResponse, GameStateUpdate, CardUsageEvent, MatchEndedEvent } from "@/lib/api-types"
 import { Clock, Coins, Home, Maximize2, Signal, Star, Trophy, Trash2, Zap, ZoomIn, ZoomOut, AlertTriangle } from "lucide-react"
 import { useSoundSettings } from "@/lib/hooks/use-sound-settings"
 import { useSettingsMenuToggle } from "@/lib/hooks/use-settings-menu-toggle"
@@ -49,14 +50,6 @@ type MatchResultEventDetail = Partial<Omit<MatchResult, "playerStats" | "reward"
   reward?: Partial<MatchReward>
 }
 
-type RewardResponse = {
-  reward?: {
-    experience?: number
-    credits?: number
-    rank_score?: number
-    rankScore?: number
-  }
-}
 
 const getRewardForOutcome = (outcome: MatchResultOutcome): MatchReward => {
   const multiplier = outcome === "win" ? 1 : 0.5
@@ -176,7 +169,7 @@ export function GameUI({
         // ignore
       }
 
-      const response = await axios.post<RewardResponse>("/api/game-results", {
+      const response = await axios.post<GameResultResponse>("/api/game-results", {
         // include match identifier so backend can resolve the game session
         match_id: matchId,
         outcome: result.outcome,
@@ -211,7 +204,7 @@ export function GameUI({
     setIsConceding(true)
     setConcedeError(null)
     try {
-      await axios.post(`/api/game-sessions/${matchId}/concede`)
+      await axios.post<ConcedeMatchResponse>(`/api/game-sessions/${matchId}/concede`)
       SoundManager.playClick()
       onReturnToMenu?.()
     } catch (error) {
@@ -317,25 +310,26 @@ export function GameUI({
 
       const user = JSON.parse(userData)
       const isLoser = user.id === data.loserId
+      const isWinner = user.id === data.winnerId
 
-      if (isLoser && matchId === data.matchId) {
-        const currentGameState = gameStateRef.current
-        const result: MatchResult = {
-          outcome: "loss",
-          playerStats: {
-            timeElapsedSeconds: currentGameState?.elapsedSeconds ?? 0,
-            energyGenerated: currentGameState?.totalEnergyGenerated ?? 0,
-            downloadSpeed: currentGameState?.downloadSpeed ?? 0,
-          },
-          rivalStats: null,
-          reward: getRewardForOutcome("loss"),
-        }
+      if (matchId !== data.matchId) return
 
-        matchResultRef.current = result
-        setMatchResult(result)
-        SoundManager.playUnlock()
-        persistMatchResult(result)
+      const currentGameState = gameStateRef.current
+      const result: MatchResult = {
+        outcome: isLoser ? "loss" : "win",
+        playerStats: {
+          timeElapsedSeconds: currentGameState?.elapsedSeconds ?? 0,
+          energyGenerated: currentGameState?.totalEnergyGenerated ?? 0,
+          downloadSpeed: currentGameState?.downloadSpeed ?? 0,
+        },
+        rivalStats: null,
+        reward: getRewardForOutcome(isLoser ? "loss" : "win"),
       }
+
+      matchResultRef.current = result
+      setMatchResult(result)
+      SoundManager.playUnlock()
+      persistMatchResult(result)
     })
 
     // Listen for game state changes from opponent

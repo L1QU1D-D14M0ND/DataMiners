@@ -1,34 +1,12 @@
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
+import type { GameStateUpdate, CardUsageEvent, MatchEndedEvent } from '@/lib/api-types'
 
 declare global {
   interface Window {
-    Echo?: any
+    Echo?: Echo<any>
     Pusher?: typeof Pusher
   }
-}
-
-export interface GameStateUpdate {
-  matchId: string
-  userId: number
-  downloadSpeed: number
-  energyGenerated: number
-  timestamp: string
-}
-
-export interface CardUsageEvent {
-  matchId: string
-  userId: number
-  cardId: string
-  cardName: string
-  timestamp: string
-}
-
-export interface MatchEndedEvent {
-  matchId: string
-  winnerId: number
-  loserId: number
-  timestamp: string
 }
 
 export type GameStateCallback = (data: GameStateUpdate) => void
@@ -36,7 +14,7 @@ export type CardUsageCallback = (data: CardUsageEvent) => void
 export type MatchEndedCallback = (data: MatchEndedEvent) => void
 
 class WebSocketClient {
-  private echo: any | null = null
+  private echo: Echo<any> | null = null
   private currentMatchId: string | null = null
   private gameStateCallbacks: Set<GameStateCallback> = new Set()
   private cardUsageCallbacks: Set<CardUsageCallback> = new Set()

@@ -62,8 +62,8 @@ export function MatchmakingLobby({ onMatchFound, onCancel, queueName = "default"
           if (pollInterval) clearInterval(pollInterval)
           SoundManager.playSuccess()
           onMatchFound(queueStatus.match_data.match_id, queueStatus.match_data.game_session_id)
-        } else if (!queueStatus.in_queue) {
-          // No longer in queue (cancelled or expired)
+        } else if (!queueStatus.in_queue && !queueStatus.matched) {
+          // No longer in queue (cancelled or expired) and not matched
           if (pollInterval) clearInterval(pollInterval)
           onCancel()
         }

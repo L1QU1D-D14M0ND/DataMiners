@@ -1,45 +1,19 @@
 import axios from "@/lib/axios"
-
-export interface MatchmakingQueue {
-  id: number
-  user_id: number
-  queue_name: string
-  skill_rating: number
-  preferences: Record<string, any>
-  status: 'waiting' | 'matched' | 'cancelled'
-  expires_at: string
-  created_at: string
-  matched_at?: string
-}
-
-export interface MatchData {
-  match_id: string
-  game_session_id: number
-  queue_name: string
-  players: Array<{
-    user_id: number
-    skill_rating: number
-  }>
-  created_at: string
-}
-
-export interface QueueStatus {
-  in_queue: boolean
-  matched?: boolean
-  queue_id?: number
-  queue_name?: string
-  skill_rating?: number
-  expires_at?: string
-  time_in_queue?: number
-  match_data?: MatchData
-}
+import type {
+  MatchmakingQueue,
+  MatchData,
+  QueueStatus,
+  JoinQueueResponse,
+  LeaveQueueResponse,
+  MatchmakingPreferences
+} from "@/lib/api-types"
 
 export const matchmakingApi = {
   /**
    * Join a matchmaking queue
    */
-  async joinQueue(queueName: string, skillRating?: number, preferences?: Record<string, any>) {
-    const response = await axios.post<{ queue_id: number; queue_name: string; skill_rating: number; expires_at: string }>('/api/matchmaking/join', {
+  async joinQueue(queueName: string, skillRating?: number, preferences?: MatchmakingPreferences) {
+    const response = await axios.post<JoinQueueResponse>('/api/matchmaking/join', {
       queue_name: queueName,
       skill_rating: skillRating,
       preferences: preferences,
@@ -51,7 +25,7 @@ export const matchmakingApi = {
    * Leave the matchmaking queue
    */
   async leaveQueue() {
-    const response = await axios.post<{ message: string }>('/api/matchmaking/leave')
+    const response = await axios.post<LeaveQueueResponse>('/api/matchmaking/leave')
     return response.data
   },
 

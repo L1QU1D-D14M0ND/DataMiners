@@ -7,6 +7,7 @@ import { TechRegistry } from "../tech"
 import { SoundManager } from "../sound-manager"
 import { BackgroundMusicManager } from "../background-music-manager"
 import axios from "@/lib/axios"
+import type { ReportMatchEndRequest, GameStateUpdateRequest, CardUsedRequest } from "@/lib/api-types"
 
 const TILE_SIZE = 32
 const GRID_WIDTH = 19
@@ -825,7 +826,7 @@ export class GameScene extends Phaser.Scene {
 
       // Report match end to backend if in PvP
       if (this.matchId) {
-          this.reportMatchEndWithRetry(this.matchId, 'win')
+          this.reportMatchEndWithRetry(this.matchId, "win")
       }
 
       window.dispatchEvent(
@@ -1066,6 +1067,8 @@ export class GameScene extends Phaser.Scene {
         energyGenerated: e.detail.energyGenerated,
         updatedAt: e.detail.updatedAt,
       }
+      // Emit gameStateUpdate to trigger UI re-render with opponent data
+      this.emitGameState()
     }
     this.addWindowListener("opponentStateUpdate", handleOpponentStateUpdate)
   }
@@ -1152,7 +1155,7 @@ export class GameScene extends Phaser.Scene {
           // ignore parse errors and let backend respond if missing
         }
 
-        await axios.post(`/api/game-sessions/${matchId}/report-end`, { winner_id: winnerId, outcome, reporting_user_id: winnerId })
+        await axios.post<ReportMatchEndRequest>(`/api/game-sessions/${matchId}/report-end`, { winner_id: winnerId, outcome, reporting_user_id: winnerId })
         return
       } catch (error) {
         console.error(`Failed to report match end (attempt ${attempt + 1}/${retries + 1}):`, error)
@@ -1169,7 +1172,7 @@ export class GameScene extends Phaser.Scene {
     const downloadSpeed = this.calculateDownloadSpeed()
 
     try {
-      await axios.post(`/api/game-sessions/${this.matchId}/state`, {
+      await axios.post<GameStateUpdateRequest>(`/api/game-sessions/${this.matchId}/state`, {
         download_speed: downloadSpeed,
         energy_generated: this.totalEnergyGenerated,
       })
@@ -1182,7 +1185,7 @@ export class GameScene extends Phaser.Scene {
     if (!this.matchId) return
 
     try {
-      await axios.post(`/api/game-sessions/${this.matchId}/card-used`, {
+      await axios.post<CardUsedRequest>(`/api/game-sessions/${this.matchId}/card-used`, {
         card_id: cardId,
         card_name: cardName,
       })

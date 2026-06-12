@@ -1,7 +1,7 @@
 {
   "name": "data-miners-root",
   "scripts": {
-    "dev": "concurrently \"cd Backend && php artisan serve\" \"cd Backend && npm run dev\" \"cd Data-Miners && npm run dev\" --names \"LARAVEL,VITE,FRONTEND\" --prefix-colors \"red,blue,green\"",
+    "dev": "concurrently \"cd Backend && php artisan serve\" \"cd Backend && npm run dev\" \"cd Backend && npx laravel-echo-server start\" \"cd Data-Miners && npm run dev\" --names \"LARAVEL,VITE,WEBSOCKET,FRONTEND\" --prefix-colors \"red,blue,yellow,green\"",
     "build": "concurrently \"cd Backend && npm run build\" \"cd Data-Miners && npm run build\""
   },
   "devDependencies": {
