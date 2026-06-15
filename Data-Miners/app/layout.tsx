@@ -34,7 +34,10 @@ const crimsonPro = Crimson_Pro({
 
 export const metadata: Metadata = {
   title: "Data Miners",
-  description: "Data Miners - A strategic grid-based command simulation",
+  description: "Data Miners - A strategic grid-based procurement simulation",
+  icons: {
+    icon: "/IconDataMiners.png",
+  },
 }
 
 export default function RootLayout({

@@ -125,11 +125,31 @@ export const buildTimeReductionNode: TechNode = {
   ],
 }
 
+export const waterUplinkNode: TechNode = {
+  id: "water_uplink_1",
+  name: "Aquatic Uplink",
+  description: "Allows uplinks to be built on water tiles",
+  icon: "antenna",
+  category: "special",
+  dataCost: 100,
+  level: 0,
+  maxLevel: 1,
+  prerequisites: [],
+  effects: [
+    {
+      type: "terrain_modifier",
+      terrainBuildingId: "uplink",
+      terrainType: "water",
+    },
+  ],
+}
+
 export const allTechNodes: TechNode[] = [
   pylonRangeNode,
   factoryEfficiencyNode,
   powerSourceRangeNode,
   drillRockBonusNode,
   storageCapacityNode,
-  buildTimeReductionNode, // Added to list
+  buildTimeReductionNode,
+  waterUplinkNode,
 ]

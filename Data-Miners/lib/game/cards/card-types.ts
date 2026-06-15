@@ -196,7 +196,7 @@ export const ALL_CARDS: GameCard[] = [
 // Deck storage key in localStorage (temporary until backend exists)
 export const DECK_STORAGE_KEY = "grid_deck_v1"
 export const MAX_DECK_SIZE = 8
-export const MIN_DECK_SIZE = 4
+export const MIN_DECK_SIZE = 8
 
 export function loadDeck(): string[] {
   if (typeof window === "undefined") return []

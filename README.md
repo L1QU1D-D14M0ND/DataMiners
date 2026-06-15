@@ -2,6 +2,49 @@
 
 A resource management game built with Laravel (backend) and Next.js (frontend).
 
+## Tech Stack
+
+### Backend
+- **Laravel 13.0** - PHP framework
+- **PHP 8.3+** - Programming language
+- **Laravel Sanctum 4.3** - API authentication
+- **Laravel Breeze 2.4** - Authentication scaffolding
+- **Predis 3.4** - Redis client for caching/queues
+- **Socket.io 4.8.3** - WebSocket server for real-time features
+- **Vite 8.0.0** - Asset bundler
+- **Tailwind CSS 3.1.0** - CSS framework
+- **Alpine.js 3.4.2** - Lightweight JavaScript framework
+- **PHPUnit 12.5.12** - Testing framework
+- **Laravel Pail 1.2.5** - Log viewer
+- **Laravel Pint 1.27** - Code style tool
+- **Faker 1.23** - Test data generation
+
+### Frontend
+- **Next.js 15.0.0** - React framework
+- **React 19.2.0** - UI library
+- **TypeScript 5** - Type system
+- **Phaser 3.90.0** - 2D game engine
+- **Socket.io-client 4.8.3** - WebSocket client for real-time features
+- **Tailwind CSS 4.1.9** - Utility-first CSS framework
+- **Radix UI** - Headless UI components (dialog, collapsible, separator, slot, toast)
+- **Lucide React 0.454.0** - Icon library
+- **Sonner 1.7.4** - Toast notifications
+- **next-themes 0.4.6** - Theme management (dark/light mode)
+- **Axios 1.16.1** - HTTP client
+- **Vitest 4.1.8** - Testing framework
+- **Testing Library** - React testing utilities (@testing-library/react, @testing-library/jest-dom)
+- **Web Audio API** - Native browser API for sound generation (no external library)
+
+### Development Tools
+- **concurrently 9.0.1** - Run multiple commands simultaneously
+- **Composer** - PHP dependency manager
+- **npm** - Node.js package manager
+
+### Infrastructure
+- **MySQL/PostgreSQL/SQLite** - Database options
+- **Memurai/Redis** - Caching and queue management
+- **Laragon** (Windows) - Development server (Apache/Nginx, MySQL, PHP)
+
 ## Project Structure
 
 - **Backend/** - Laravel API backend
@@ -33,10 +76,9 @@ A resource management game built with Laravel (backend) and Next.js (frontend).
      - Username: `root`
      - Password: (empty)
 
-5. **Redis** (for caching and queue management)
-   - Download from [redis.io](https://redis.io/download)
-   - Or use Memurai for Windows (recommended)
-   - Start Redis server before running the application
+5. **Memurai** (for caching and queue management)
+   - Download from [memurai.com](https://www.memurai.com/get-memurai)
+   - Start Memurai server before running the application
 
 ### Alternative Database Options
 
@@ -151,12 +193,18 @@ npm run dev
 ```
 Frontend will run at `http://localhost:3000`
 
-**Terminal 3 - Redis (if not running as service):**
+**Terminal 3 - Memurai (if not running as service):**
 ```bash
-redis-server
+memurai-server
 ```
 
-**Terminal 4 - Laravel Queue Worker (for background jobs):**
+**Terminal 4 - WebSocket Server (for real-time multiplayer):**
+```bash
+cd Backend
+node socket-server.js
+```
+
+**Terminal 5 - Laravel Queue Worker (for background jobs):**
 ```bash
 cd Backend
 php artisan queue:work
@@ -177,6 +225,17 @@ This will start:
 - Laravel logs (Pail)
 - Vite dev server
 
+Then in separate terminals, run the WebSocket server and frontend:
+```bash
+cd Backend
+node socket-server.js
+```
+
+```bash
+cd Data-Miners
+npm run dev
+```
+
 Then in a separate terminal, run the frontend:
 ```bash
 cd Data-Miners
@@ -185,39 +244,37 @@ npm run dev
 
 ## Development Workflow
 
-1. Make sure Redis is running
+1. Make sure Memurai is running
 2. Start the backend server (either `php artisan serve` or `composer run dev`)
-3. Start the frontend server (`npm run dev`)
-4. Open your browser to `http://localhost:3000`
+3. Start the WebSocket server (`node socket-server.js` in Backend directory)
+4. Start the frontend server (`npm run dev`)
+5. Open your browser to `http://localhost:3000`
 
 ## Additional Services
 
-### Redis Configuration
+### Memurai Configuration
 
-Make sure Redis is running for:
+Make sure Memurai is running for:
 - Caching
 - Queue management
-- Real-time broadcasting (if using Laravel Echo)
 
-Default Redis configuration in `.env`:
+Default Memurai configuration in `.env`:
 ```env
 REDIS_HOST=127.0.0.1
 REDIS_PASSWORD=null
 REDIS_PORT=6379
 ```
 
-### Broadcasting (Optional)
+### WebSocket Server
 
-If using real-time features with Laravel Echo and Pusher:
-1. Install the Laravel Echo server:
-   ```bash
-   npm install -g laravel-echo-server
-   ```
-2. Configure Pusher credentials in `.env`
-3. Start the Echo server:
-   ```bash
-   laravel-echo-server start
-   ```
+The project uses a custom Socket.io server for real-time features (match state synchronization, card usage notifications, match ended events). Start the WebSocket server:
+
+```bash
+cd Backend
+node socket-server.js
+```
+
+The WebSocket server runs on port 6001 and is required for online multiplayer functionality.
 
 ## Troubleshooting
 
@@ -251,11 +308,11 @@ npm run dev -- -p 3001
 - Ensure npm is installed: `npm -v`
 - Clear npm cache if needed: `npm cache clean --force`
 
-### Redis Connection Issues
+### Memurai Connection Issues
 
-- Ensure Redis server is running: `redis-cli ping` (should return PONG)
-- Check Redis configuration in `.env`
-- Verify Redis is not blocked by firewall
+- Ensure Memurai server is running: `memurai-cli ping` (should return PONG)
+- Check Memurai configuration in `.env`
+- Verify Memurai is not blocked by firewall
 
 ## Testing
 

@@ -14,6 +14,7 @@ class MatchmakingQueue extends Model
         'user_id',
         'queue_name',
         'skill_rating',
+        'experience_points',
         'preferences',
         'status',
         'matched_at',

@@ -1,12 +1,16 @@
 import axios from "@/lib/axios"
 import { ALL_CARDS, type GameCard, getCardById } from "./card-types"
-import type { Card, Deck, CreateDeckRequest, UpdateDeckRequest } from "@/lib/api-types"
+import type { Card, Deck, CreateDeckRequest, UpdateDeckRequest, UserCard } from "@/lib/api-types"
 
 // Dynamic mapping between frontend card IDs and backend card IDs
 // Built by fetching cards from the backend and matching by name
 let FRONTEND_TO_BACKEND: Record<string, number> = {}
 let BACKEND_TO_FRONTEND: Record<number, string> = {}
 let MAPPING_INITIALIZED = false
+
+// Store unlocked card IDs (backend IDs)
+let UNLOCKED_CARD_IDS: Set<number> = new Set()
+let UNLOCKED_CARDS_INITIALIZED = false
 
 // Initialize the mapping by fetching cards from the backend
 export async function initializeCardMapping(force = false): Promise<void> {
@@ -86,6 +90,60 @@ export function getBackendCardId(frontendId: string): number | undefined {
 // Get frontend card ID for a backend card
 export function getFrontendCardId(backendId: number): string | undefined {
   return BACKEND_TO_FRONTEND[backendId]
+}
+
+// Initialize unlocked cards by fetching from the profile API
+export async function initializeUnlockedCards(force = false): Promise<void> {
+  if (UNLOCKED_CARDS_INITIALIZED && !force) {
+    return
+  }
+
+  try {
+    const response = await axios.get<{ cards: UserCard[] }>("/api/profile")
+    const userCards: UserCard[] = response.data.cards
+
+    UNLOCKED_CARD_IDS = new Set()
+    for (const userCard of userCards) {
+      if (userCard.unlocked) {
+        UNLOCKED_CARD_IDS.add(userCard.id)
+      }
+    }
+
+    UNLOCKED_CARDS_INITIALIZED = true
+  } catch (error) {
+    console.error("[CardMapping] Failed to initialize unlocked cards:", error)
+    UNLOCKED_CARDS_INITIALIZED = false
+    throw error
+  }
+}
+
+// Check if a card is unlocked by its backend ID
+export function isCardUnlocked(backendId: number): boolean {
+  return UNLOCKED_CARD_IDS.has(backendId)
+}
+
+// Check if a card is unlocked by its frontend ID
+export function isFrontendCardUnlocked(frontendId: string): boolean {
+  const backendId = FRONTEND_TO_BACKEND[frontendId] ?? getCardById(frontendId)?.backendId
+  return backendId !== undefined && UNLOCKED_CARD_IDS.has(backendId)
+}
+
+// Get all unlocked frontend card IDs
+export function getUnlockedFrontendCardIds(): string[] {
+  return ALL_CARDS
+    .filter((card) => {
+      const backendId = FRONTEND_TO_BACKEND[card.id] ?? card.backendId
+      return backendId !== undefined && UNLOCKED_CARD_IDS.has(backendId)
+    })
+    .map((card) => card.id)
+}
+
+// Get all unlocked GameCard objects
+export function getUnlockedCards(): GameCard[] {
+  return ALL_CARDS.filter((card) => {
+    const backendId = FRONTEND_TO_BACKEND[card.id] ?? card.backendId
+    return backendId !== undefined && UNLOCKED_CARD_IDS.has(backendId)
+  })
 }
 
 // Deck API functions

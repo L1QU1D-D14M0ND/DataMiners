@@ -28,27 +28,16 @@ class DeckSeeder extends Seeder
         }
 
         // Create 50 random decks
+        // The Deck model's created event will automatically add the 8 default cards
         for ($i = 0; $i < 50; $i++) {
             $userId = $users[array_rand($users)];
-            
-            $deck = Deck::create([
+
+            Deck::create([
                 'user_id' => $userId,
                 'deck_name' => 'Deck ' . ($i + 1),
             ]);
-
-            // Add 5-8 random cards to each deck
-            $numCards = rand(5, 8);
-            $selectedCards = array_rand($cards, min($numCards, count($cards)));
-            
-            if (!is_array($selectedCards)) {
-                $selectedCards = [$selectedCards];
-            }
-
-            foreach ($selectedCards as $cardIndex) {
-                $deck->cards()->attach($cards[$cardIndex]);
-            }
         }
 
-        $this->command->info('50 decks with cards created successfully.');
+        $this->command->info('50 decks with 8 default cards created successfully.');
     }
 }

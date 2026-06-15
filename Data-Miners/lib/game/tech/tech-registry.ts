@@ -7,6 +7,7 @@ class TechRegistryClass {
   private nodes: Map<string, TechNode> = new Map()
   private globalModifiers: Map<string, number> = new Map()
   private resourceBonuses: Map<string, number> = new Map()
+  private terrainModifiers: Map<string, Set<string>> = new Map()
 
   constructor() {
     this.reset()
@@ -16,6 +17,7 @@ class TechRegistryClass {
     this.nodes.clear()
     this.globalModifiers.clear()
     this.resourceBonuses.clear()
+    this.terrainModifiers.clear()
     BuildingRegistry.resetAll()
 
     for (const node of allTechNodes) {
@@ -114,6 +116,14 @@ class TechRegistryClass {
           this.globalModifiers.set(effect.modifierKey, current + effect.modifierValue)
         }
         break
+
+      case "terrain_modifier":
+        if (effect.terrainBuildingId && effect.terrainType) {
+          const current = this.terrainModifiers.get(effect.terrainBuildingId) || new Set()
+          current.add(effect.terrainType)
+          this.terrainModifiers.set(effect.terrainBuildingId, current)
+        }
+        break
     }
   }
 
@@ -123,6 +133,10 @@ class TechRegistryClass {
 
   getResourceBonus(key: string): number {
     return this.resourceBonuses.get(key) || 0
+  }
+
+  getTerrainModifiers(buildingId: string): Set<string> {
+    return this.terrainModifiers.get(buildingId) || new Set()
   }
 
   private emitChange() {

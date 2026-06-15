@@ -22,6 +22,9 @@ Route::post('/spa/register', [SpaAuthenticationController::class, 'register'])->
 Route::get('/spa/user', [SpaAuthenticationController::class, 'user'])->name('spa.user');
 Route::post('/spa/logout', [SpaAuthenticationController::class, 'logout'])->name('spa.logout');
 
+// Game result API route (handles authentication manually)
+Route::post('/api/game-results', [GameResultController::class, 'store'])->name('game-results.store');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'admin'])
     ->name('dashboard');
@@ -38,9 +41,6 @@ Route::middleware('auth')->group(function () {
     // Profile API route
     Route::get('/api/profile', [UserController::class, 'profileApi'])->name('api.profile');
     Route::put('/api/profile/equipped-cosmetics', [UserController::class, 'updateEquippedCosmetics'])->name('api.profile.equipped-cosmetics');
-
-    // Game result API route
-    Route::post('/api/game-results', [GameResultController::class, 'store'])->name('game-results.store');
 
     // Deck API routes
     Route::get('/api/decks', [DeckController::class, 'index'])->name('decks.index');
@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
 
     // Game Session API routes
     Route::post('/api/game-sessions', [GameSessionController::class, 'createSession'])->name('game-sessions.create');
+    Route::get('/api/game-sessions/{matchId}/info', [GameSessionController::class, 'getMatchInfo'])->name('game-sessions.info');
     Route::post('/api/game-sessions/{matchId}/state', [GameSessionController::class, 'updateState'])->name('game-sessions.update-state');
     Route::post('/api/game-sessions/{matchId}/card-used', [GameSessionController::class, 'reportCardUsage'])->name('game-sessions.card-used');
     Route::get('/api/game-sessions/{matchId}', [GameSessionController::class, 'getState'])->name('game-sessions.get-state');

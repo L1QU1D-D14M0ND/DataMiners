@@ -48,12 +48,11 @@ class GameLogSeeder extends Seeder
             ]);
 
             // Create card game logs for this game
-            // Each player plays 3-5 random cards (unique per user per game)
-            $numCardsUserA = rand(3, 5);
-            $numCardsUserB = rand(3, 5);
+            // Each player plays exactly 8 random cards (unique per user per game)
+            $numCards = 8;
 
             // User A's cards (ensure unique cards)
-            $userACards = array_rand($cards, min($numCardsUserA, count($cards)));
+            $userACards = array_rand($cards, min($numCards, count($cards)));
             if (!is_array($userACards)) {
                 $userACards = [$userACards];
             }
@@ -66,7 +65,7 @@ class GameLogSeeder extends Seeder
             }
 
             // User B's cards (ensure unique cards)
-            $userBCards = array_rand($cards, min($numCardsUserB, count($cards)));
+            $userBCards = array_rand($cards, min($numCards, count($cards)));
             if (!is_array($userBCards)) {
                 $userBCards = [$userBCards];
             }

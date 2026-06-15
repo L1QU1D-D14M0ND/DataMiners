@@ -4,11 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Card extends Model
 {
-    protected $fillable = ['name', 'experience_unlock', 'credits_unlock'];
+    protected $fillable = ['name', 'experience_unlock', 'credits_unlock', 'is_default'];
 
     /**
      * Get the users that have this card.

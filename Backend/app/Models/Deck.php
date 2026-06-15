@@ -11,6 +11,34 @@ class Deck extends Model
     protected $fillable = ['user_id', 'deck_name'];
 
     /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (Deck $deck) {
+            // Automatically add the 8 default cards when a deck is created
+            $defaultCardNames = [
+                'Power Surge',
+                'Signal Relay',
+                'Factory Overdrive',
+                'Data Cache',
+                'Reinforced Grid',
+                'Ore Harvest',
+                'Deep Uplink',
+                'System Cooldown',
+            ];
+
+            $defaultCards = Card::whereIn('name', $defaultCardNames)->get();
+
+            if ($defaultCards->count() > 0) {
+                $defaultCardIds = $defaultCards->pluck('id')->toArray();
+                // Use sync instead of attach to avoid duplicates
+                $deck->cards()->sync($defaultCardIds);
+            }
+        });
+    }
+
+    /**
      * Get the user that owns this deck.
      */
     public function user(): BelongsTo

@@ -34,7 +34,7 @@ class ColosseumService
     /**
      * Add a player to a matchmaking queue
      */
-    public function addToQueue(string $queueName, int $userId, int $skillRating, array $preferences = []): ?array
+    public function addToQueue(string $queueName, int $userId, int $skillRating, int $experiencePoints = 0, array $preferences = []): ?array
     {
         if (!$this->isEnabled()) {
             return null;
@@ -49,6 +49,7 @@ class ColosseumService
                 ->post("{$this->apiUrl}/v1/queues/{$queueName}/players", [
                     'player_id' => (string) $userId,
                     'skill_rating' => $skillRating,
+                    'experience_points' => $experiencePoints,
                     'preferences' => $preferences,
                     'metadata' => [
                         'joined_at' => now()->toISOString(),

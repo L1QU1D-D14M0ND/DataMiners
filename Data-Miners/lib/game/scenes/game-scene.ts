@@ -53,6 +53,7 @@ export class GameScene extends Phaser.Scene {
   private totalEnergyGenerated = 0
   private matchId: string | null = null
   private opponentState: { downloadSpeed: number; energyGenerated: number; updatedAt: string } | null = null
+  private currentUser: { id: number; name: string; email: string } | null = null
 
   constructor() {
     super({ key: "GameScene" })
@@ -78,6 +79,7 @@ export class GameScene extends Phaser.Scene {
     this.setupCameraPan()
     this.centerCameraOnGrid()
     this.setupTechListener() // Add tech listener
+    this.setupUserListener() // Add user listener
     this.startBackgroundMusic()
   }
 
@@ -179,6 +181,21 @@ export class GameScene extends Phaser.Scene {
       this.selectedTool = e.detail.tool
     }
     this.addWindowListener("toolChange", handleToolChange)
+  }
+
+  private setupUserListener() {
+    const handleUserUpdate = (e: CustomEvent<{ id: number; name: string; email: string }>) => {
+      this.currentUser = e.detail
+      console.log('[GameScene] User updated:', this.currentUser)
+    }
+    this.addWindowListener("userUpdate", handleUserUpdate)
+
+    // Also try to read from localStorage as a fallback
+    const userJson = localStorage.getItem('user')
+    if (userJson) {
+      this.currentUser = JSON.parse(userJson)
+      console.log('[GameScene] User loaded from localStorage:', this.currentUser)
+    }
   }
 
   private setupZoom() {
@@ -336,7 +353,11 @@ export class GameScene extends Phaser.Scene {
       const tileDef = TileRegistry.getTile(tile.terrainType)
       if (type !== "generator" && type !== "drill" && type !== "uplink" && !tileDef?.stats.buildable) return false
 
-      if (!definition.stats.allowedTerrain.includes(tile.terrainType)) {
+      const allowedTerrain = definition.stats.allowedTerrain
+      const techEnabledTerrain = TechRegistry.getTerrainModifiers(type)
+      const isTerrainAllowed = allowedTerrain.includes(tile.terrainType) || techEnabledTerrain.has(tile.terrainType)
+
+      if (!isTerrainAllowed) {
         return false
       }
     }
@@ -1155,6 +1176,7 @@ export class GameScene extends Phaser.Scene {
           // ignore parse errors and let backend respond if missing
         }
 
+        console.log('[GameScene] Reporting match end with data:', { matchId, winnerId, outcome })
         await axios.post<ReportMatchEndRequest>(`/api/game-sessions/${matchId}/report-end`, { winner_id: winnerId, outcome, reporting_user_id: winnerId })
         return
       } catch (error) {
@@ -1176,6 +1198,17 @@ export class GameScene extends Phaser.Scene {
         download_speed: downloadSpeed,
         energy_generated: this.totalEnergyGenerated,
       })
+
+      // Emit WebSocket event for real-time opponent state update
+      const { getWebSocketClient } = await import('@/lib/websocket-client')
+      const wsClient = getWebSocketClient()
+      console.log('[GameScene] Attempting to send opponent state via WebSocket', { user: this.currentUser, isConnected: wsClient.isConnected() })
+      if (this.currentUser && wsClient.isConnected()) {
+        wsClient.sendOpponentState(this.currentUser.id, downloadSpeed, this.totalEnergyGenerated)
+        console.log('[GameScene] Sent opponent state via WebSocket')
+      } else {
+        console.log('[GameScene] Cannot send opponent state - user or WebSocket not connected')
+      }
     } catch (error) {
       console.error('Failed to update game state:', error)
     }
@@ -1189,6 +1222,16 @@ export class GameScene extends Phaser.Scene {
         card_id: cardId,
         card_name: cardName,
       })
+
+      // Emit WebSocket event for real-time card usage update
+      const { getWebSocketClient } = await import('@/lib/websocket-client')
+      const wsClient = getWebSocketClient()
+      if (this.currentUser && wsClient.isConnected()) {
+        wsClient.sendCardUsage(this.currentUser.id, cardId, cardName)
+        console.log('[GameScene] Sent card usage via WebSocket:', cardName)
+      } else {
+        console.log('[GameScene] Cannot send card usage - user or WebSocket not connected')
+      }
     } catch (error) {
       console.error('Failed to report card usage:', error)
     }

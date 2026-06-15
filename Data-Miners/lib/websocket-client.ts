@@ -1,62 +1,94 @@
-import Echo from 'laravel-echo'
-import Pusher from 'pusher-js'
+import { io, Socket } from 'socket.io-client'
 import type { GameStateUpdate, CardUsageEvent, MatchEndedEvent } from '@/lib/api-types'
-
-declare global {
-  interface Window {
-    Echo?: Echo<any>
-    Pusher?: typeof Pusher
-  }
-}
 
 export type GameStateCallback = (data: GameStateUpdate) => void
 export type CardUsageCallback = (data: CardUsageEvent) => void
 export type MatchEndedCallback = (data: MatchEndedEvent) => void
 
 class WebSocketClient {
-  private echo: Echo<any> | null = null
+  private socket: Socket | null = null
   private currentMatchId: string | null = null
   private gameStateCallbacks: Set<GameStateCallback> = new Set()
   private cardUsageCallbacks: Set<CardUsageCallback> = new Set()
   private matchEndedCallbacks: Set<MatchEndedCallback> = new Set()
 
-  constructor() {
-    if (typeof window !== 'undefined') {
-      window.Pusher = Pusher
-    }
-  }
-
   connect(token: string): void {
-    if (this.echo) {
+    if (this.socket) {
       return
     }
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
+    console.log('[WebSocket] Connecting to Socket.io server on port 6001')
 
-    this.echo = new Echo({
-      broadcaster: 'pusher',
-      key: process.env.NEXT_PUBLIC_PUSHER_APP_KEY || 'app-key',
-      cluster: process.env.NEXT_PUBLIC_PUSHER_APP_CLUSTER || 'mt1',
-      wsHost: process.env.NEXT_PUBLIC_PUSHER_HOST || backendUrl.replace(/^https?:\/\//, ''),
-      wsPort: process.env.NEXT_PUBLIC_PUSHER_PORT ? parseInt(process.env.NEXT_PUBLIC_PUSHER_PORT) : 6001,
-      wssPort: process.env.NEXT_PUBLIC_PUSHER_PORT ? parseInt(process.env.NEXT_PUBLIC_PUSHER_PORT) : 6001,
-      forceTLS: process.env.NEXT_PUBLIC_PUSHER_SCHEME === 'https',
-      enabledTransports: ['ws'],
-      authEndpoint: `${backendUrl}/broadcasting/auth`,
-      auth: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      },
-      disableStats: true,
+    this.socket = io('http://127.0.0.1:6001', {
+      auth: { token },
+      transports: ['websocket'],
+    })
+
+    this.socket.on('connect', () => {
+      console.log('[WebSocket] Connected successfully')
+    })
+
+    this.socket.on('connect_error', (error) => {
+      console.error('[WebSocket] Connection error:', error)
+    })
+
+    this.socket.on('opponent-state-update', (data: any) => {
+      console.log('[WebSocket] Received opponent-state-update event:', data)
+      const gameStateUpdate: GameStateUpdate = {
+        matchId: this.currentMatchId || '',
+        userId: data.userId,
+        downloadSpeed: data.downloadSpeed,
+        energyGenerated: data.energyGenerated,
+        timestamp: data.timestamp,
+      }
+      this.gameStateCallbacks.forEach((callback) => callback(gameStateUpdate))
+    })
+
+    this.socket.on('card-used-update', (data: any) => {
+      console.log('[WebSocket] Received card-used-update event:', data)
+      const cardUsageEvent: CardUsageEvent = {
+        matchId: this.currentMatchId || '',
+        userId: data.userId,
+        cardId: data.cardId,
+        cardName: data.cardName,
+        timestamp: data.timestamp,
+      }
+      this.cardUsageCallbacks.forEach((callback) => callback(cardUsageEvent))
+    })
+
+    this.socket.on('match-ended-update', (data: any) => {
+      console.log('[WebSocket] Received match-ended-update event:', data)
+      const matchEndedEvent: MatchEndedEvent = {
+        matchId: data.matchId,
+        winnerId: data.winnerId,
+        loserId: data.loserId,
+        timestamp: data.timestamp,
+      }
+      this.matchEndedCallbacks.forEach((callback) => callback(matchEndedEvent))
+    })
+
+    this.socket.on('sync-ready-update', (data: any) => {
+      console.log('[WebSocket] Received sync-ready-update event:', data)
+      // Treat this as an opponent state update for sync purposes
+      const gameStateUpdate: GameStateUpdate = {
+        matchId: this.currentMatchId || '',
+        userId: data.userId,
+        downloadSpeed: 0,
+        energyGenerated: 0,
+        timestamp: new Date().toISOString(),
+      }
+      this.gameStateCallbacks.forEach((callback) => callback(gameStateUpdate))
+    })
+
+    this.socket.on('disconnect', () => {
+      console.log('[WebSocket] Disconnected')
     })
   }
 
   disconnect(): void {
-    if (this.echo) {
-      this.echo.disconnect()
-      this.echo = null
+    if (this.socket) {
+      this.socket.disconnect()
+      this.socket = null
     }
     this.currentMatchId = null
     this.gameStateCallbacks.clear()
@@ -65,41 +97,67 @@ class WebSocketClient {
   }
 
   joinMatch(matchId: string): boolean {
-    if (!this.echo) {
+    if (!this.socket) {
       console.error('WebSocket not connected — real-time match events will not be received')
       return false
     }
 
     this.currentMatchId = matchId
+    console.log('[WebSocket] Joining match:', matchId)
 
-    // Subscribe to the private match channel
-    const channel = this.echo.private(`match.${matchId}`)
+    this.socket.emit('join-match', matchId)
 
-    // Listen for game state changes
-    channel.listen('.game.state.changed', (data: GameStateUpdate) => {
-      this.gameStateCallbacks.forEach((callback) => callback(data))
-    })
-
-    // Listen for card usage events
-    channel.listen('.card.used', (data: CardUsageEvent) => {
-      this.cardUsageCallbacks.forEach((callback) => callback(data))
-    })
-
-    // Listen for match ended events
-    channel.listen('.match.ended', (data: MatchEndedEvent) => {
-      this.matchEndedCallbacks.forEach((callback) => callback(data))
-    })
-
+    console.log('[WebSocket] Successfully joined match')
+    
+    // Emit sync-ready to notify opponent we're ready
+    console.log('[WebSocket] Emitting sync-ready event')
+    this.socket.emit('sync-ready', { matchId, userId: this.currentMatchId })
+    
     return true
   }
 
   leaveMatch(): void {
-    if (!this.echo || !this.currentMatchId) {
+    if (!this.socket || !this.currentMatchId) {
       return
     }
 
-    this.echo.leave(`match.${this.currentMatchId}`)
+    this.socket.emit('leave-match', this.currentMatchId)
     this.currentMatchId = null
+  }
+
+  sendOpponentState(userId: number, downloadSpeed: number, energyGenerated: number): void {
+    if (this.socket && this.currentMatchId) {
+      this.socket.emit('opponent-state', {
+        matchId: this.currentMatchId,
+        userId,
+        downloadSpeed,
+        energyGenerated,
+      })
+      console.log('[WebSocket] Sent opponent state')
+    }
+  }
+
+  sendCardUsage(userId: number, cardId: string, cardName: string): void {
+    if (this.socket && this.currentMatchId) {
+      this.socket.emit('card-used', {
+        matchId: this.currentMatchId,
+        userId,
+        cardId,
+        cardName,
+      })
+      console.log('[WebSocket] Sent card usage:', cardName)
+    }
+  }
+
+  sendMatchEnded(winnerId: number, loserId: number): void {
+    if (this.socket && this.currentMatchId) {
+      this.socket.emit('match-ended', {
+        matchId: this.currentMatchId,
+        winnerId,
+        loserId,
+      })
+      console.log('[WebSocket] Sent match ended')
+    }
   }
 
   onGameStateChange(callback: GameStateCallback): () => void {
@@ -118,7 +176,7 @@ class WebSocketClient {
   }
 
   isConnected(): boolean {
-    return this.echo !== null
+    return this.socket !== null && this.socket.connected
   }
 
   isInMatch(): boolean {

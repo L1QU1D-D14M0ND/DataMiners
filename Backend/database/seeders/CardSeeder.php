@@ -36,8 +36,23 @@ class CardSeeder extends Seeder
             'Digital Fortress',
         ];
 
+        // Default unlocked cards (8 cards)
+        $defaultCardNames = [
+            'Power Surge',
+            'Signal Relay',
+            'Factory Overdrive',
+            'Data Cache',
+            'Reinforced Grid',
+            'Ore Harvest',
+            'Deep Uplink',
+            'System Cooldown',
+        ];
+
         foreach ($frontendCards as $card) {
-            Card::firstOrCreate(['name' => $card]);
+            Card::firstOrCreate([
+                'name' => $card,
+                'is_default' => in_array($card, $defaultCardNames),
+            ]);
         }
 
         $this->command->info('Frontend game cards have been seeded successfully.');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -39,7 +40,7 @@ class UserController extends Controller
             'role_id' => 'nullable|exists:roles,id',
         ]);
 
-        $validated['password'] = bcrypt($validated['password']);
+        $validated['password'] = Hash::make($validated['password']);
         User::create($validated);
 
         return redirect()->route('users.index')
@@ -100,7 +101,7 @@ class UserController extends Controller
     {
         $user = $request->user();
 
-        $user->load(['sets.cosmetics.cosmeticType', 'cosmetics.cosmeticType', 'equippedProfilePicture', 'equippedFrame', 'equippedCard', 'equippedTitle']);
+        $user->load(['sets.cosmetics.cosmeticType', 'cosmetics.cosmeticType', 'equippedProfilePicture', 'equippedFrame', 'equippedCard', 'equippedTitle', 'cards']);
 
         return response()->json([
             'user' => [
@@ -131,6 +132,14 @@ class UserController extends Controller
                     'cosmetic_type' => $user->equippedTitle->cosmeticType?->name,
                 ] : null,
             ],
+            'cards' => $user->cards->map(function ($card) {
+                return [
+                    'id' => $card->id,
+                    'name' => $card->name,
+                    'is_default' => $card->is_default,
+                    'unlocked' => $card->pivot->unlocked ?? false,
+                ];
+            }),
             'sets' => $user->sets->map(function ($set) {
                 return [
                     'id' => $set->id,

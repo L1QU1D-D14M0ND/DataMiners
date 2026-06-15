@@ -1,4 +1,5 @@
 import type { NumericBuildingStatKey } from "../buildings/building-definition"
+import type { TerrainType } from "../types"
 
 export interface TechNode {
   id: string
@@ -22,7 +23,7 @@ export interface TechNode {
 }
 
 export interface TechEffect {
-  type: "building_stat" | "resource_cap" | "global_modifier"
+  type: "building_stat" | "resource_cap" | "global_modifier" | "terrain_modifier"
 
   // For building_stat effects
   buildingId?: string
@@ -37,6 +38,10 @@ export interface TechEffect {
   // For global_modifier effects
   modifierKey?: string
   modifierValue?: number
+
+  // For terrain_modifier effects
+  terrainBuildingId?: string
+  terrainType?: TerrainType
 }
 
 export function cloneTechNode(node: TechNode): TechNode {

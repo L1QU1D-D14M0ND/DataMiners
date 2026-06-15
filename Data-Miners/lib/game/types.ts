@@ -85,6 +85,7 @@ export interface MatchResult {
   playerStats: MatchStats
   rivalStats: MatchStats | null
   reward: MatchReward
+  victoryMethod?: string
 }
 
 export type SelectedTool = BuildingType | "delete" | null

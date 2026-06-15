@@ -19,10 +19,10 @@ import { SettingsModal } from "./settings-modal"
 import { DataProgressBar } from "./data-progress-bar"
 import { TopBar } from "./top-bar"
 import { CardNotificationContainer } from "./card-notification"
+import { UserProfileCard, type UserProfileData } from "./user-profile-card"
 import axios from "@/lib/axios"
-import { getWebSocketClient } from "@/lib/websocket-client"
-import type { GameResultResponse, ConcedeMatchResponse, GameStateUpdate, CardUsageEvent, MatchEndedEvent } from "@/lib/api-types"
-import { Clock, Coins, Home, Maximize2, Signal, Star, Trophy, Trash2, Zap, ZoomIn, ZoomOut, AlertTriangle } from "lucide-react"
+import type { GameResultResponse, ConcedeMatchResponse } from "@/lib/api-types"
+import { Clock, Coins, Home, Maximize2, Signal, Star, Trophy, Trash2, Zap, ZoomIn, ZoomOut, AlertTriangle, User } from "lucide-react"
 import { useSoundSettings } from "@/lib/hooks/use-sound-settings"
 import { useSettingsMenuToggle } from "@/lib/hooks/use-settings-menu-toggle"
 import { formatDuration } from "@/lib/format"
@@ -149,6 +149,8 @@ export function GameUI({
   const [showExitWarning, setShowExitWarning] = useState(false)
   const [isConceding, setIsConceding] = useState(false)
   const [concedeError, setConcedeError] = useState<string | null>(null)
+  const [currentUserProfile, setCurrentUserProfile] = useState<UserProfileData | null>(null)
+  const [opponentProfile, setOpponentProfile] = useState<UserProfileData | null>(null)
   const gameStateRef = useRef<GameState | null>(gameState)
   const matchResultRef = useRef<MatchResult | null>(null)
 
@@ -192,11 +194,36 @@ export function GameUI({
         currentResult ? { ...currentResult, reward: syncedReward } : currentResult,
       )
       setRewardStatus("saved")
+
+      // Fetch user profiles for the match result screen
+      if (matchId) {
+        try {
+          const infoResponse = await axios.get<{ opponent: UserProfileData }>(`/api/game-sessions/${matchId}/info`)
+          setOpponentProfile(infoResponse.data.opponent)
+        } catch (error) {
+          console.error("Failed to fetch opponent profile:", error)
+        }
+
+        // Set current user profile from localStorage
+        try {
+          const userJson = localStorage.getItem('user')
+          if (userJson) {
+            const user = JSON.parse(userJson)
+            setCurrentUserProfile({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+            })
+          }
+        } catch (e) {
+          console.error("Failed to parse user from localStorage:", e)
+        }
+      }
     } catch (error) {
       console.error("Failed to persist match result:", error)
       setRewardStatus("failed")
     }
-  }, [])
+  }, [matchId])
 
   const handleConcede = useCallback(async () => {
     if (!matchId) return
@@ -216,11 +243,12 @@ export function GameUI({
 
   const handleReturnToMenuWithWarning = useCallback(() => {
     if (matchId) {
-      setShowExitWarning(true)
+      // Auto-concede when leaving a match
+      handleConcede()
     } else {
       onReturnToMenu?.()
     }
-  }, [matchId, onReturnToMenu])
+  }, [matchId, onReturnToMenu, handleConcede])
 
   useSoundSettings(settings)
   useSettingsMenuToggle(showSettings)
@@ -259,6 +287,7 @@ export function GameUI({
         playerStats,
         rivalStats: detail.rivalStats ?? null,
         reward,
+        victoryMethod: detail.victoryMethod,
       }
 
       matchResultRef.current = result
@@ -280,93 +309,13 @@ export function GameUI({
     }
   }, [persistMatchResult])
 
-  // WebSocket integration for PvP
+  // Set matchId in game scene
   useEffect(() => {
     if (!matchId) return
 
-    const wsClient = getWebSocketClient()
-
-    // Get auth token from localStorage or axios
-    const token = localStorage.getItem('token') || ''
-
-    // Connect to WebSocket
-    wsClient.connect(token)
-
-    // Join the match channel
-    wsClient.joinMatch(matchId)
-
-    // Set matchId in game scene
     window.dispatchEvent(new CustomEvent('setMatchId', {
       detail: { matchId }
     }))
-
-    // Listen for match ended events
-    const unsubscribeMatchEnded = wsClient.onMatchEnded((data: MatchEndedEvent) => {
-      if (matchResultRef.current) return
-
-      // Get current user ID from localStorage
-      const userData = localStorage.getItem('user')
-      if (!userData) return
-
-      const user = JSON.parse(userData)
-      const isLoser = user.id === data.loserId
-      const isWinner = user.id === data.winnerId
-
-      if (matchId !== data.matchId) return
-
-      const currentGameState = gameStateRef.current
-      const result: MatchResult = {
-        outcome: isLoser ? "loss" : "win",
-        playerStats: {
-          timeElapsedSeconds: currentGameState?.elapsedSeconds ?? 0,
-          energyGenerated: currentGameState?.totalEnergyGenerated ?? 0,
-          downloadSpeed: currentGameState?.downloadSpeed ?? 0,
-        },
-        rivalStats: null,
-        reward: getRewardForOutcome(isLoser ? "loss" : "win"),
-      }
-
-      matchResultRef.current = result
-      setMatchResult(result)
-      SoundManager.playUnlock()
-      persistMatchResult(result)
-    })
-
-    // Listen for game state changes from opponent
-    const unsubscribeGameState = wsClient.onGameStateChange((data: GameStateUpdate) => {
-      // Update opponent state in game state
-      window.dispatchEvent(new CustomEvent('opponentStateUpdate', {
-        detail: {
-          downloadSpeed: data.downloadSpeed,
-          energyGenerated: data.energyGenerated,
-          updatedAt: data.timestamp,
-        }
-      }))
-    })
-
-    // Listen for card usage from opponent
-    const unsubscribeCardUsed = wsClient.onCardUsed((data: CardUsageEvent) => {
-      // Get current user ID to filter out own card usage
-      const userData = localStorage.getItem('user')
-      if (!userData) return
-
-      const user = JSON.parse(userData)
-      
-      // Only dispatch notification if card was used by opponent, not current user
-      if (user.id !== data.userId) {
-        window.dispatchEvent(new CustomEvent('opponentCardUsed', {
-          detail: data
-        }))
-      }
-    })
-
-    return () => {
-      unsubscribeMatchEnded()
-      unsubscribeGameState()
-      unsubscribeCardUsed()
-      wsClient.leaveMatch()
-      // Don't disconnect here as other components might be using it
-    }
   }, [matchId])
 
 
@@ -549,6 +498,11 @@ export function GameUI({
                     ? "Alien data secured and uploaded to your network."
                     : "Operation ended. Partial compensation has been credited."}
                 </div>
+                {matchResult.victoryMethod && (
+                  <div className="text-white/40 text-xs mt-2 font-mono">
+                    VICTORY METHOD: {matchResult.victoryMethod.toUpperCase()}
+                  </div>
+                )}
               </div>
               <div className="font-mono text-[10px] text-white/40 sm:text-right">
                 {rewardStatus === "saving" && "SYNCING REWARDS"}
@@ -558,7 +512,23 @@ export function GameUI({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 py-5">
+            {/* User Profiles */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5">
+              <UserProfileCard
+                user={currentUserProfile}
+                label="YOU"
+                status="connected"
+                showStats
+              />
+              <UserProfileCard
+                user={opponentProfile}
+                label="OPPONENT"
+                status="connected"
+                showStats
+              />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 py-5 border-t border-white/10">
               <div className="border border-white/10 bg-black/20 p-4">
                 <div className="font-heading text-xs tracking-wider text-white/80 mb-3">YOUR OPERATION</div>
                 <div className="grid grid-cols-2 gap-3">

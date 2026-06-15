@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -63,32 +62,23 @@ class UserFactory extends Factory
             ]);
 
             // Create a default set for the user
-            $user->sets()->create([
+            $userSet = $user->sets()->create([
                 'set_name' => 'Default',
             ]);
 
-            // Attach the 8 default cards to the default deck
-            $defaultCardNames = [
-                'Advanced CCTV',
-                'Advanced Satellite Deployment',
-                'Encript Communications',
-                'Energy Generation Audit',
-                'Mark Protected Zones',
-                'Orbital Scan',
-                'Prefabricated Wind Turbine',
-                'Supply Package',
-            ];
+            // Attach default cosmetics to the default set
+            $defaultCosmetics = \App\Models\Cosmetic::whereIn('name', [
+                'Default Frame',
+                'Default Picture',
+                'Default Card',
+                'Default Title',
+            ])->pluck('id');
 
-            $defaultCards = \App\Models\Card::whereIn('name', $defaultCardNames)->get();
-
-            if ($defaultCards->count() > 0) {
-            foreach ($defaultCards as $card) {
-                DB::table('deck_card')->insert([
-                    'decks_deck_id' => $user->decks()->first()->id,
-                    'cards_card_id' => $card->id,
-                ]);
+            if ($defaultCosmetics->count() > 0) {
+                foreach ($defaultCosmetics as $cosmeticId) {
+                    $userSet->cosmetics()->attach($cosmeticId);
+                }
             }
-        }
 
             // Attach default cosmetics (one from each type)
             $defaultCosmetics = \App\Models\Cosmetic::whereIn('name', [

@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\GameSession;
 use App\Models\CardUsageLog;
-use App\Events\GameStateChanged;
 use App\Events\CardUsed;
-use App\Events\MatchEnded;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class GameSessionController extends Controller
@@ -51,6 +51,42 @@ class GameSessionController extends Controller
     }
 
     /**
+     * Get match information including opponent profile
+     */
+    public function getMatchInfo(Request $request, string $matchId): JsonResponse
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $session = GameSession::byMatch($matchId)->active()->forPlayer($user->id)->first();
+        if (!$session) {
+            return response()->json(['error' => 'Session not found'], 404);
+        }
+
+        $opponentId = $session->getOpponentId($user->id);
+        if (!$opponentId) {
+            return response()->json(['error' => 'Opponent not found'], 404);
+        }
+
+        $opponent = \App\Models\User::find($opponentId);
+        if (!$opponent) {
+            return response()->json(['error' => 'Opponent user not found'], 404);
+        }
+
+        return response()->json([
+            'match_id' => $session->match_id,
+            'opponent' => [
+                'id' => $opponent->id,
+                'name' => $opponent->name,
+                'email' => $opponent->email,
+            ],
+            'status' => $session->status,
+        ]);
+    }
+
+    /**
      * Update player's game state (download speed, energy, etc.)
      */
     public function updateState(Request $request, string $matchId): JsonResponse
@@ -78,21 +114,16 @@ class GameSessionController extends Controller
 
         $session->updatePlayerState($user->id, $state);
 
-        // Broadcast the state change to the opponent
-        try {
-            broadcast(new GameStateChanged(
-                $matchId,
-                $user->id,
-                $request->download_speed,
-                $request->energy_generated
-            ));
-        } catch (\Exception $e) {
-            Log::error('Failed to broadcast game state change', [
-                'match_id' => $matchId,
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-            ]);
+        // Clear cache for both players
+        $opponentId = $session->getOpponentId($user->id);
+        if ($opponentId) {
+            Cache::forget("match_state:{$matchId}:user:{$opponentId}");
         }
+        Cache::forget("match_state:{$matchId}:user:{$user->id}");
+
+        // Emit WebSocket event for real-time opponent state update
+        // This is handled by the simple Socket.io server
+        // The frontend will send the opponent-state event directly to the WebSocket server
 
         return response()->json(['message' => 'State updated successfully']);
     }
@@ -156,6 +187,14 @@ class GameSessionController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        // Try to get from cache first
+        $cacheKey = "match_state:{$matchId}:user:{$user->id}";
+        $cachedData = Cache::get($cacheKey);
+
+        if ($cachedData !== null) {
+            return response()->json($cachedData);
+        }
+
         $session = GameSession::byMatch($matchId)->active()->forPlayer($user->id)->first();
         if (!$session) {
             return response()->json(['error' => 'Session not found'], 404);
@@ -163,11 +202,16 @@ class GameSessionController extends Controller
 
         $opponentState = $session->getOpponentState($user->id);
 
-        return response()->json([
+        $response = [
             'match_id' => $session->match_id,
             'opponent_state' => $opponentState,
             'status' => $session->status,
-        ]);
+        ];
+
+        // Cache for 5 seconds to reduce database load
+        Cache::put($cacheKey, $response, 5);
+
+        return response()->json($response);
     }
 
     /**
@@ -198,6 +242,11 @@ class GameSessionController extends Controller
      */
     public function concede(Request $request, string $matchId): JsonResponse
     {
+        Log::info('GameSession.concede called', [
+            'match_id' => $matchId,
+            'user_id' => Auth::id(),
+        ]);
+
         $user = Auth::user();
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -205,23 +254,48 @@ class GameSessionController extends Controller
 
         $session = GameSession::byMatch($matchId)->active()->forPlayer($user->id)->first();
         if (!$session) {
+            Log::warning('GameSession.concede: Session not found or not active', [
+                'match_id' => $matchId,
+                'user_id' => $user->id,
+            ]);
             return response()->json(['error' => 'Session not found'], 404);
         }
 
         // Mark the session as completed with the conceding player as loser
         $winnerId = ($session->player1_id === $user->id) ? $session->player2_id : $session->player1_id;
 
-        $session->update([
-            'status' => 'completed',
+        Log::info('GameSession.concede: Updating session', [
+            'match_id' => $matchId,
+            'session_id' => $session->id,
             'winner_id' => $winnerId,
-            'ended_at' => now(),
+            'loser_id' => $user->id,
         ]);
 
-        // Broadcast match ended event
         try {
-            broadcast(new MatchEnded($matchId, $winnerId, $user->id));
+            $session->update([
+                'status' => 'completed',
+                'winner_id' => $winnerId,
+                'ended_at' => now(),
+            ]);
         } catch (\Exception $e) {
-            Log::error('Failed to broadcast match conceded event', [
+            Log::error('GameSession.concede: Failed to update session', [
+                'match_id' => $matchId,
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['error' => 'Failed to update session'], 500);
+        }
+
+        // Clear cache for both players
+        Cache::forget("match_state:{$matchId}:user:{$session->player1_id}");
+        Cache::forget("match_state:{$matchId}:user:{$session->player2_id}");
+
+        // Broadcast match ended event via WebSocket server
+        try {
+            $this->broadcastMatchEndedViaWebSocket($matchId, $winnerId, $user->id);
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast match conceded event via WebSocket', [
                 'match_id' => $matchId,
                 'winner_id' => $winnerId,
                 'loser_id' => $user->id,
@@ -244,7 +318,7 @@ class GameSessionController extends Controller
         ]);
 
         $request->validate([
-            'winner_id' => 'required|exists:users,id',
+            'winner_id' => 'nullable|integer|exists:users,id',
         ]);
 
         $user = Auth::user();
@@ -262,8 +336,17 @@ class GameSessionController extends Controller
             return response()->json(['error' => 'Session not found'], 404);
         }
 
-        $winnerId = (int) $request->winner_id;
+        // If winner_id is not provided, default to the reporting user
+        $winnerId = $request->winner_id ? (int) $request->winner_id : $user->id;
+        
+        // Validate that the winner is a participant in the match
         if ($winnerId !== $session->player1_id && $winnerId !== $session->player2_id) {
+            Log::warning('Winner is not a participant in the match', [
+                'match_id' => $matchId,
+                'winner_id' => $winnerId,
+                'player1_id' => $session->player1_id,
+                'player2_id' => $session->player2_id,
+            ]);
             return response()->json(['error' => 'Winner must be a participant'], 422);
         }
 
@@ -288,10 +371,15 @@ class GameSessionController extends Controller
             'ended_at' => now(),
         ]);
 
+        // Clear cache for both players
+        Cache::forget("match_state:{$matchId}:user:{$session->player1_id}");
+        Cache::forget("match_state:{$matchId}:user:{$session->player2_id}");
+
+        // Broadcast match ended event via WebSocket server directly
         try {
-            broadcast(new MatchEnded($matchId, $winnerId, $loserId));
+            $this->broadcastMatchEndedViaWebSocket($matchId, $winnerId, $loserId);
         } catch (\Exception $e) {
-            Log::error('Failed to broadcast match ended event', [
+            Log::error('Failed to broadcast match ended event via WebSocket', [
                 'match_id' => $matchId,
                 'winner_id' => $winnerId,
                 'loser_id' => $loserId,
@@ -300,6 +388,28 @@ class GameSessionController extends Controller
         }
 
         return response()->json(['message' => 'Match end reported successfully']);
+    }
+
+    /**
+     * Broadcast match ended event via WebSocket server
+     */
+    private function broadcastMatchEndedViaWebSocket(string $matchId, int $winnerId, int $loserId): void
+    {
+        // Use the Socket.io server to broadcast the match ended event
+        $socketServerUrl = config('app.socket_server_url', 'http://localhost:6001');
+        
+        try {
+            Http::post("{$socketServerUrl}/broadcast-match-ended", [
+                'matchId' => $matchId,
+                'winnerId' => $winnerId,
+                'loserId' => $loserId,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast match ended via WebSocket server', [
+                'match_id' => $matchId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

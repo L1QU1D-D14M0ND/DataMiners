@@ -6,6 +6,7 @@ import { GameScene } from "@/lib/game/scenes/game-scene"
 import { GameUI } from "./game-ui"
 import { BackgroundMusicManager } from "@/lib/game/background-music-manager"
 import type { GameState, GameSettings, SelectedTool } from "@/lib/game/types"
+import type { UserProfile } from "@/lib/api-types"
 
 interface GameCanvasProps {
   onReturnToMenu?: () => void
@@ -13,13 +14,15 @@ interface GameCanvasProps {
   matchId?: string | null
   settings: GameSettings
   onSettingsChange: (settings: GameSettings) => void
+  user: UserProfile | null
 }
 
-export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings, onSettingsChange }: GameCanvasProps) {
+export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings, onSettingsChange, user }: GameCanvasProps) {
   const gameRef = useRef<Phaser.Game | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [selectedTool, setSelectedTool] = useState<SelectedTool | null>(null)
+  const [cardWarning, setCardWarning] = useState<{ message: string; timestamp: number } | null>(null)
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("gameSettingsUpdate", { detail: settings }))
@@ -35,6 +38,25 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("deckIdsUpdate", { detail: deckIds }))
   }, [deckIds])
+
+  // Pass user information to the game scene when it changes
+  useEffect(() => {
+    console.log('[GameCanvas] User prop changed:', user)
+    if (user) {
+      console.log('[GameCanvas] Dispatching user update event:', user)
+      window.dispatchEvent(new CustomEvent("userUpdate", { detail: user }))
+    }
+  }, [user])
+
+  // Auto-dismiss card warning after 3 seconds
+  useEffect(() => {
+    if (cardWarning) {
+      const timer = setTimeout(() => {
+        setCardWarning(null)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [cardWarning])
 
   // Suppress benign ResizeObserver loop error (common with Phaser's scale system)
   useEffect(() => {
@@ -67,6 +89,12 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
 
     gameRef.current = new Phaser.Game(config)
 
+    // Dispatch user update event after game is created
+    if (user) {
+      console.log('[GameCanvas] Dispatching user update event after game creation:', user)
+      window.dispatchEvent(new CustomEvent("userUpdate", { detail: user }))
+    }
+
     const handleStateUpdate = (event: Event) => setGameState((event as CustomEvent<GameState>).detail)
     window.addEventListener("gameStateUpdate", handleStateUpdate)
 
@@ -87,6 +115,38 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
     }
     window.addEventListener("opponentStateUpdate", handleOpponentStateUpdate)
 
+    const handleCardUsedUpdate = (event: Event) => {
+      const detail = (event as CustomEvent).detail
+      console.log('[GameCanvas] Opponent used card:', detail.cardName)
+      // Show warning message to player that opponent used a card
+      setCardWarning({
+        message: `Opponent used: ${detail.cardName}`,
+        timestamp: Date.now()
+      })
+    }
+    window.addEventListener("cardUsedUpdate", handleCardUsedUpdate)
+
+    const handleMatchEndedUpdate = (event: Event) => {
+      const detail = (event as CustomEvent).detail
+      console.log('[GameCanvas] Match ended:', detail)
+      // Dispatch proper game events to trigger winning screen
+      const currentUserJson = localStorage.getItem('user')
+      const currentUser = currentUserJson ? JSON.parse(currentUserJson) : null
+      if (currentUser) {
+        if (detail.winnerId === currentUser.id) {
+          window.dispatchEvent(new CustomEvent('gameWon', {
+            detail: {
+              victoryMethod: 'Opponent Quit'
+            }
+          }))
+        } else if (detail.loserId === currentUser.id) {
+          // Player quit - just return to menu (quitting is already handled in config menu)
+          onReturnToMenu?.()
+        }
+      }
+    }
+    window.addEventListener("matchEndedUpdate", handleMatchEndedUpdate)
+
     const handleDeselect = () => setSelectedTool(null)
     window.addEventListener("deselectTool", handleDeselect)
 
@@ -97,6 +157,8 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
     return () => {
       window.removeEventListener("gameStateUpdate", handleStateUpdate)
       window.removeEventListener("opponentStateUpdate", handleOpponentStateUpdate)
+      window.removeEventListener("cardUsedUpdate", handleCardUsedUpdate)
+      window.removeEventListener("matchEndedUpdate", handleMatchEndedUpdate)
       window.removeEventListener("deselectTool", handleDeselect)
       window.removeEventListener("keyboardToolChange", handleKeyboardToolChange)
       gameRef.current?.destroy(true)
@@ -165,8 +227,22 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
           onToolChange={setSelectedTool}
           onReturnToMenu={onReturnToMenu}
           deckIds={deckIds}
-          matchId={matchId}
+          matchId={matchId || undefined}
         />
+      )}
+
+      {/* Card usage warning - bottom left corner */}
+      {cardWarning && (
+        <div className="absolute bottom-20 left-6 z-50 animate-in slide-in-from-left fade-in duration-300">
+          <div className="bg-red-950/90 border border-red-500/50 text-red-100 px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span className="text-sm font-medium">{cardWarning.message}</span>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

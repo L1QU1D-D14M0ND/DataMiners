@@ -14,11 +14,13 @@ import { ALL_CARDS, MAX_DECK_SIZE, MIN_DECK_SIZE, type GameCard } from "@/lib/ga
 import { SoundManager } from "@/lib/game/sound-manager"
 import {
   initializeCardMapping,
+  initializeUnlockedCards,
   fetchDecks,
   createDeck,
   updateDeck,
   deleteDeck,
   toFrontendCardIds,
+  isFrontendCardUnlocked,
 } from "@/lib/game/cards/card-mapping"
 import { getCardIcon } from "@/lib/game/icons"
 import type { UserDeck } from "@/lib/game/cards/deck-types"
@@ -106,6 +108,7 @@ export function DeckEditor({ onBack, onDecksUpdated, initialDeckId }: DeckEditor
     async function init() {
       try {
         await initializeCardMapping(true)
+        await initializeUnlockedCards(true)
         await loadDecks()
       } catch (error) {
         console.error("Failed to initialize deck editor:", error)
@@ -257,7 +260,7 @@ export function DeckEditor({ onBack, onDecksUpdated, initialDeckId }: DeckEditor
   }
 
   const deckCards = deck.map((id) => ALL_CARDS.find((c) => c.id === id)).filter((c): c is GameCard => !!c)
-  const availableCards = ALL_CARDS.filter((c) => !deck.includes(c.id))
+  const availableCards = ALL_CARDS.filter((c) => !deck.includes(c.id) && isFrontendCardUnlocked(c.id))
 
   const handleDragStart = useCallback((e: React.DragEvent, card: GameCard) => {
     e.dataTransfer.effectAllowed = "move"

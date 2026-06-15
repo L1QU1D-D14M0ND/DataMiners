@@ -16,6 +16,13 @@ const cosmeticSections: Array<{ key: CosmeticTypeKey; label: string }> = [
   { key: "title", label: "TITLE" },
 ]
 
+const cosmeticTypeNames: Record<CosmeticTypeKey, string> = {
+  profile_picture: "Profile Picture",
+  frame: "Profile Frame",
+  card: "Profile Card",
+  title: "Profile Title",
+}
+
 const cosmeticFieldKeys: Record<CosmeticTypeKey, string> = {
   profile_picture: "equipped_profile_picture_id",
   frame: "equipped_frame_id",
@@ -98,7 +105,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
   const getCosmeticsByType = (type: CosmeticTypeKey) =>
     profileData?.user_cosmetics.filter(
-      (cosmetic) => cosmetic.cosmetic_type.name === type && cosmetic.unlocked
+      (cosmetic) => cosmetic.cosmetic_type.name === cosmeticTypeNames[type] && cosmetic.unlocked
     ) ?? []
 
   const levelInfo = useMemo(() => {

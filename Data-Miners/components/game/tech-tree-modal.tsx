@@ -90,7 +90,7 @@ export function TechTreeModal({ isOpen, onClose, currentData, onUnlock }: TechTr
 
   if (!isOpen) return null
 
-  const categories: TechNode["category"][] = ["power", "production", "storage"]
+  const categories: TechNode["category"][] = ["power", "production", "storage", "special"]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-auto">

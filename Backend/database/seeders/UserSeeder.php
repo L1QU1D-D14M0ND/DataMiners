@@ -4,9 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\Role;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Services\CardUnlockService;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class UserSeeder extends Seeder
 {
@@ -15,50 +14,29 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        $cardUnlockService = new CardUnlockService();
         $adminRole = Role::where('name', 'Administrator')->first();
 
         $admin = User::create([
             'name' => 'Overlord',
             'email' => 'overlord@admin.local',
-            'password' => bcrypt(env('SEED_ADMIN_PASSWORD', 'ChangeMe!Admin#' . bin2hex(random_bytes(4)))),
+            'password' => bcrypt(env('SEED_ADMIN_PASSWORD', 'Overlord123')),
             'role_id' => $adminRole?->id,
             'rank_score' => 999999,
             'experience_points' => 999999,
             'credits' => 999999,
         ]);
 
+        // Unlock default cards for admin
+        $cardUnlockService->unlockDefaultCards($admin);
+        // Unlock cards based on level (admin has max XP, so should unlock all)
+        $cardUnlockService->checkAndUnlockCardsForUser($admin);
+
         // Create default deck for admin user
+        // The Deck model's created event will automatically add the 8 default cards
         $admin->decks()->create([
             'deck_name' => 'Default',
         ]);
-
-        // Create default set for admin user
-        $admin->sets()->create([
-            'set_name' => 'Default',
-        ]);
-
-        // Attach the 8 default cards to the admin's default deck
-        $defaultCardNames = [
-            'Power Surge',
-            'Signal Relay',
-            'Factory Overdrive',
-            'Data Cache',
-            'Reinforced Grid',
-            'Ore Harvest',
-            'Deep Uplink',
-            'System Cooldown',
-        ];
-
-        $defaultCards = \App\Models\Card::whereIn('name', $defaultCardNames)->get();
-
-        if ($defaultCards->count() > 0) {
-            foreach ($defaultCards as $card) {
-                DB::table('deck_card')->insert([
-                    'decks_deck_id' => $admin->decks()->first()->id,
-                    'cards_card_id' => $card->id,
-                ]);
-            }
-        }
 
         // Attach default cosmetics for admin user
         $defaultCosmetics = \App\Models\Cosmetic::whereIn('name', [
@@ -67,6 +45,18 @@ class UserSeeder extends Seeder
             'Default Card',
             'Default Title',
         ])->pluck('id');
+
+        // Create default set for admin user
+        $adminSet = $admin->sets()->create([
+            'set_name' => 'Default',
+        ]);
+
+        // Attach default cosmetics to admin's default set
+        if ($defaultCosmetics->count() > 0) {
+            foreach ($defaultCosmetics as $cosmeticId) {
+                $adminSet->cosmetics()->attach($cosmeticId);
+            }
+        }
 
         if ($defaultCosmetics->count() > 0) {
             foreach ($defaultCosmetics as $cosmeticId) {
@@ -80,30 +70,33 @@ class UserSeeder extends Seeder
         $testUser1 = User::create([
             'name' => 'TestPlayer1',
             'email' => 'player1@test.local',
-            'password' => bcrypt(env('SEED_TEST_PASSWORD', 'TestPass!' . bin2hex(random_bytes(4)))),
+            'password' => bcrypt(env('SEED_TEST_PASSWORD', 'TestPass123')),
             'role_id' => $playerRole?->id,
             'rank_score' => 1000,
             'experience_points' => 500,
             'credits' => 1000,
         ]);
 
+        // Unlock default cards for test user 1
+        $cardUnlockService->unlockDefaultCards($testUser1);
+        // Unlock cards based on level (500 XP = level 5, so should unlock cards at levels 2 and 4)
+        $cardUnlockService->checkAndUnlockCardsForUser($testUser1);
+
         // Create default deck for test user 1
+        // The Deck model's created event will automatically add the 8 default cards
         $testUser1->decks()->create([
             'deck_name' => 'Default',
         ]);
 
         // Create default set for test user 1
-        $testUser1->sets()->create([
+        $testUser1Set = $testUser1->sets()->create([
             'set_name' => 'Default',
         ]);
 
-        // Attach the 8 default cards to test user 1's default deck
-        if ($defaultCards->count() > 0) {
-            foreach ($defaultCards as $card) {
-                DB::table('deck_card')->insert([
-                    'decks_deck_id' => $testUser1->decks()->first()->id,
-                    'cards_card_id' => $card->id,
-                ]);
+        // Attach default cosmetics to test user 1's default set
+        if ($defaultCosmetics->count() > 0) {
+            foreach ($defaultCosmetics as $cosmeticId) {
+                $testUser1Set->cosmetics()->attach($cosmeticId);
             }
         }
 
@@ -117,30 +110,33 @@ class UserSeeder extends Seeder
         $testUser2 = User::create([
             'name' => 'TestPlayer2',
             'email' => 'player2@test.local',
-            'password' => bcrypt(env('SEED_TEST_PASSWORD', 'TestPass!' . bin2hex(random_bytes(4)))),
+            'password' => bcrypt(env('SEED_TEST_PASSWORD', 'TestPass123')),
             'role_id' => $playerRole?->id,
             'rank_score' => 1000,
             'experience_points' => 500,
             'credits' => 1000,
         ]);
 
+        // Unlock default cards for test user 2
+        $cardUnlockService->unlockDefaultCards($testUser2);
+        // Unlock cards based on level (500 XP = level 5, so should unlock cards at levels 2 and 4)
+        $cardUnlockService->checkAndUnlockCardsForUser($testUser2);
+
         // Create default deck for test user 2
+        // The Deck model's created event will automatically add the 8 default cards
         $testUser2->decks()->create([
             'deck_name' => 'Default',
         ]);
 
         // Create default set for test user 2
-        $testUser2->sets()->create([
+        $testUser2Set = $testUser2->sets()->create([
             'set_name' => 'Default',
         ]);
 
-        // Attach the 8 default cards to test user 2's default deck
-        if ($defaultCards->count() > 0) {
-            foreach ($defaultCards as $card) {
-                DB::table('deck_card')->insert([
-                    'decks_deck_id' => $testUser2->decks()->first()->id,
-                    'cards_card_id' => $card->id,
-                ]);
+        // Attach default cosmetics to test user 2's default set
+        if ($defaultCosmetics->count() > 0) {
+            foreach ($defaultCosmetics as $cosmeticId) {
+                $testUser2Set->cosmetics()->attach($cosmeticId);
             }
         }
 

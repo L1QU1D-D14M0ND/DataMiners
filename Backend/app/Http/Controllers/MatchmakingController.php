@@ -49,13 +49,14 @@ class MatchmakingController extends Controller
             'user_id' => $user->id,
             'queue_name' => $request->queue_name,
             'skill_rating' => $request->skill_rating ?? $user->rank_score ?? 1000,
+            'experience_points' => $user->experience_points ?? 0,
             'preferences' => $request->preferences,
             'status' => 'waiting',
             'expires_at' => $expiresAt,
         ]);
 
         if ($this->colosseum->isEnabled()) {
-            $remoteResult = $this->colosseum->addToQueue($queue->queue_name, $user->id, $queue->skill_rating, $queue->preferences ?? []);
+            $remoteResult = $this->colosseum->addToQueue($queue->queue_name, $user->id, $queue->skill_rating, $queue->experience_points, $queue->preferences ?? []);
             if ($remoteResult === null) {
                 $queue->update(['status' => 'cancelled']);
                 return response()->json(['error' => 'Failed to join external matchmaking queue'], 503);
@@ -76,6 +77,7 @@ class MatchmakingController extends Controller
             'queue_id' => $queue->id,
             'queue_name' => $queue->queue_name,
             'skill_rating' => $queue->skill_rating,
+            'experience_points' => $queue->experience_points,
             'expires_at' => $queue->expires_at,
         ]);
     }
@@ -172,110 +174,25 @@ class MatchmakingController extends Controller
             ->first();
 
         if ($matchedQueue) {
-            try {
-                $matchData = Redis::get("match:{$matchedQueue->id}");
-            } catch (\Exception $e) {
-                Log::error('Redis error fetching match data for matched queue', [
-                    'queue_id' => $matchedQueue->id,
-                    'error' => $e->getMessage(),
-                ]);
-                $matchData = null;
-            }
+            $matchData = $this->getMatchDataFromRedis($matchedQueue);
             if ($matchData) {
-                $match = json_decode($matchData, true);
-                if ($match === null) {
-                    Log::error('Failed to decode match data from Redis', [
-                        'queue_id' => $matchedQueue->id,
-                        'raw_data' => $matchData,
-                    ]);
-                } else {
-                    try {
-                        $this->removeFromRedisQueue($matchedQueue);
-                    } catch (\Exception $e) {
-                        Log::error('Failed to remove matched queue from Redis', [
-                            'queue_id' => $matchedQueue->id,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                    return response()->json([
-                        'in_queue' => false,
-                        'matched' => true,
-                        'match_data' => $match,
-                    ]);
-                }
-            }
-        }
-
-        try {
-            $matchData = Redis::get("match:{$queue->id}");
-        } catch (\Exception $e) {
-            Log::error('Redis error fetching match data', [
-                'queue_id' => $queue->id,
-                'error' => $e->getMessage(),
-            ]);
-            $matchData = null;
-        }
-        if ($matchData) {
-            $match = json_decode($matchData, true);
-            if ($match === null) {
-                Log::error('Failed to decode match data from Redis', [
-                    'queue_id' => $queue->id,
-                    'raw_data' => $matchData,
-                ]);
-            } else {
-                $queue->update(['status' => 'matched', 'matched_at' => now()]);
-                try {
-                    $this->removeFromRedisQueue($queue);
-                } catch (\Exception $e) {
-                    Log::error('Failed to remove matched queue from Redis', [
-                        'queue_id' => $queue->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-
                 return response()->json([
                     'in_queue' => false,
                     'matched' => true,
-                    'match_data' => $match,
+                    'match_data' => $matchData,
                 ]);
             }
         }
 
-        // If queue is matched, check for match data in Redis
-        if ($queue->status === 'matched') {
-            try {
-                $matchData = Redis::get("match:{$queue->id}");
-            } catch (\Exception $e) {
-                Log::error('Redis error fetching match data for matched queue', [
-                    'queue_id' => $queue->id,
-                    'error' => $e->getMessage(),
-                ]);
-                $matchData = null;
-            }
-            if ($matchData) {
-                $match = json_decode($matchData, true);
-                if ($match === null) {
-                    Log::error('Failed to decode match data from Redis', [
-                        'queue_id' => $queue->id,
-                        'raw_data' => $matchData,
-                    ]);
-                } else {
-                    try {
-                        $this->removeFromRedisQueue($queue);
-                    } catch (\Exception $e) {
-                        Log::error('Failed to remove matched queue from Redis', [
-                            'queue_id' => $queue->id,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                    return response()->json([
-                        'in_queue' => false,
-                        'matched' => true,
-                        'match_data' => $match,
-                    ]);
-                }
-            }
+        $matchData = $this->getMatchDataFromRedis($queue, true);
+        if ($matchData) {
+            return response()->json([
+                'in_queue' => false,
+                'matched' => true,
+                'match_data' => $matchData,
+            ]);
         }
+
 
         // Only perform matchmaking if queue is still waiting
         if ($queue->status === 'waiting') {
@@ -295,6 +212,9 @@ class MatchmakingController extends Controller
 
     /**
      * Find matches for a queue (HTTP route handler)
+     * @deprecated This endpoint is only used for local testing when Colosseum is disabled.
+     *             Use the automatic matchmaking via joinQueue/getQueueStatus instead.
+     *             Scheduled for removal in future version.
      */
     public function findMatches(Request $request): JsonResponse
     {
@@ -316,13 +236,19 @@ class MatchmakingController extends Controller
      */
     private function performMatchmaking(string $queueName): array
     {
-        $skillRange = config('matchmaking.skill_range', 100);
+        $baseSkillRange = config('matchmaking.skill_range', 100);
+        $baseExperienceRange = config('matchmaking.experience_range', 500);
+        $skillRangeExpansion = config('matchmaking.skill_range_expansion', 50);
+        $experienceRangeExpansion = config('matchmaking.experience_range_expansion', 250);
+        $maxSkillRange = config('matchmaking.max_skill_range', 500);
+        $maxExperienceRange = config('matchmaking.max_experience_range', 2000);
         $maxWaitTime = config('matchmaking.max_wait_time', 60);
+        $expansionIntervalSeconds = 5; // Expansion occurs every 5 seconds
 
         $matches = [];
 
         // Use database transaction with pessimistic locking to prevent race conditions
-        DB::transaction(function () use ($queueName, $skillRange, $maxWaitTime, &$matches) {
+        DB::transaction(function () use ($queueName, $baseSkillRange, $baseExperienceRange, $skillRangeExpansion, $experienceRangeExpansion, $maxSkillRange, $maxExperienceRange, $maxWaitTime, $expansionIntervalSeconds, &$matches) {
             $queues = MatchmakingQueue::active()
                 ->byQueue($queueName)
                 ->where('created_at', '>=', now()->subSeconds($maxWaitTime))
@@ -337,15 +263,28 @@ class MatchmakingController extends Controller
                     continue;
                 }
 
-                // Find opponents within skill range
-                $opponents = $queues->filter(function ($q) use ($queue, $skillRange, $processedIds) {
+                // Calculate expanded ranges based on wait time
+                $waitSeconds = now()->diffInSeconds($queue->created_at);
+                $expansionSteps = floor($waitSeconds / $expansionIntervalSeconds);
+                
+                $queueSkillRange = min($maxSkillRange, $baseSkillRange + ($skillRangeExpansion * $expansionSteps));
+                $queueExperienceRange = min($maxExperienceRange, $baseExperienceRange + ($experienceRangeExpansion * $expansionSteps));
+
+                // Find opponents within skill and experience ranges
+                $opponents = $queues->filter(function ($q) use ($queue, $queueSkillRange, $queueExperienceRange, $processedIds, $expansionIntervalSeconds, $maxSkillRange, $baseSkillRange, $skillRangeExpansion, $maxExperienceRange, $baseExperienceRange, $experienceRangeExpansion) {
+                    [$opponentSkillRange, $opponentExperienceRange] = $this->calculateOpponentRanges($q, $expansionIntervalSeconds, $maxSkillRange, $baseSkillRange, $skillRangeExpansion, $maxExperienceRange, $baseExperienceRange, $experienceRangeExpansion);
+                    
+                    // Use the maximum of both ranges for matching
+                    $effectiveSkillRange = max($queueSkillRange, $opponentSkillRange);
+                    $effectiveExperienceRange = max($queueExperienceRange, $opponentExperienceRange);
+
                     return $q->id !== $queue->id
                         && !in_array($q->id, $processedIds)
-                        && abs($q->skill_rating - $queue->skill_rating) <= $skillRange;
+                        && abs($q->skill_rating - $queue->skill_rating) <= $effectiveSkillRange
+                        && abs($q->experience_points - $queue->experience_points) <= $effectiveExperienceRange;
                 })->take(1); // 1v1 for now, can be increased
 
-                if ($opponents->count() > 0) {
-                    $opponent = $opponents->first();
+                if ($opponent = $opponents->first()) {
                     $matchId = uniqid('match_');
 
                     try {
@@ -364,8 +303,8 @@ class MatchmakingController extends Controller
                             'game_session_id' => $gameSession->id,
                             'queue_name' => $queueName,
                             'players' => [
-                                ['user_id' => $queue->user_id, 'skill_rating' => $queue->skill_rating],
-                                ['user_id' => $opponent->user_id, 'skill_rating' => $opponent->skill_rating],
+                                ['user_id' => $queue->user_id, 'skill_rating' => $queue->skill_rating, 'experience_points' => $queue->experience_points],
+                                ['user_id' => $opponent->user_id, 'skill_rating' => $opponent->skill_rating, 'experience_points' => $opponent->experience_points],
                             ],
                             'created_at' => now()->toISOString(),
                         ];
@@ -399,9 +338,10 @@ class MatchmakingController extends Controller
 
     private function buildColosseumQueueStatus(array $status, MatchmakingQueue $queue): array
     {
+        $statusValue = $status['status'] ?? 'waiting';
         $queueStatus = [
-            'in_queue' => ($status['status'] ?? 'waiting') === 'waiting',
-            'matched' => ($status['status'] ?? '') === 'matched',
+            'in_queue' => $statusValue === 'waiting',
+            'matched' => $statusValue === 'matched',
             'queue_id' => $queue->id,
             'queue_name' => $queue->queue_name,
             'skill_rating' => $queue->skill_rating,
@@ -447,7 +387,11 @@ class MatchmakingController extends Controller
 
         $gameSession = GameSession::byMatch($matchId)->first();
         if (!$gameSession) {
-            $playerIds = array_values(array_filter(array_map(fn ($player) => $player['user_id'] ?? null, $players)));
+            $playerIds = collect($players)
+                ->map(fn ($player) => $player['user_id'] ?? null)
+                ->filter()
+                ->values()
+                ->all();
             if (count($playerIds) >= 2) {
                 $gameSession = GameSession::create([
                     'match_id' => $matchId,
@@ -463,12 +407,73 @@ class MatchmakingController extends Controller
             'match_id' => $matchId,
             'game_session_id' => $gameSession?->id,
             'queue_name' => $queue->queue_name,
-            'players' => array_values(array_map(fn ($player) => [
-                'user_id' => (int) ($player['user_id'] ?? 0),
-                'skill_rating' => $player['skill_rating'] ?? null,
-            ], $players)),
+            'players' => collect($players)
+                ->map(fn ($player) => [
+                    'user_id' => (int) ($player['user_id'] ?? 0),
+                    'skill_rating' => $player['skill_rating'] ?? null,
+                ])
+                ->values()
+                ->all(),
             'created_at' => $createdAt,
         ];
+    }
+
+    /**
+     * Calculate opponent's expanded skill and experience ranges based on wait time
+     */
+    private function calculateOpponentRanges(MatchmakingQueue $opponentQueue, int $expansionIntervalSeconds, int $maxSkillRange, int $baseSkillRange, int $skillRangeExpansion, int $maxExperienceRange, int $baseExperienceRange, int $experienceRangeExpansion): array
+    {
+        $opponentWaitSeconds = now()->diffInSeconds($opponentQueue->created_at);
+        $opponentExpansionSteps = floor($opponentWaitSeconds / $expansionIntervalSeconds);
+        
+        $opponentSkillRange = min($maxSkillRange, $baseSkillRange + ($skillRangeExpansion * $opponentExpansionSteps));
+        $opponentExperienceRange = min($maxExperienceRange, $baseExperienceRange + ($experienceRangeExpansion * $opponentExpansionSteps));
+        
+        return [$opponentSkillRange, $opponentExperienceRange];
+    }
+
+    /**
+     * Get match data from Redis for a given queue
+     */
+    private function getMatchDataFromRedis(MatchmakingQueue $queue, bool $updateStatus = false): ?array
+    {
+        try {
+            $matchData = Redis::get("match:{$queue->id}");
+        } catch (\Exception $e) {
+            Log::error('Redis error fetching match data', [
+                'queue_id' => $queue->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+
+        if (!$matchData) {
+            return null;
+        }
+
+        $match = json_decode($matchData, true);
+        if ($match === null) {
+            Log::error('Failed to decode match data from Redis', [
+                'queue_id' => $queue->id,
+                'raw_data' => $matchData,
+            ]);
+            return null;
+        }
+
+        if ($updateStatus) {
+            $queue->update(['status' => 'matched', 'matched_at' => now()]);
+        }
+
+        try {
+            $this->removeFromRedisQueue($queue);
+        } catch (\Exception $e) {
+            Log::error('Failed to remove matched queue from Redis', [
+                'queue_id' => $queue->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $match;
     }
 
     /**
@@ -481,6 +486,7 @@ class MatchmakingController extends Controller
             'queue_id' => $queue->id,
             'user_id' => $queue->user_id,
             'skill_rating' => $queue->skill_rating,
+            'experience_points' => $queue->experience_points,
             'created_at' => $queue->created_at->toISOString(),
         ];
 

@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { ArrowRight, Home, Lock, Mail, Settings, ShieldCheck, User, UserPlus } from "lucide-react"
 import { MainMenu } from "@/components/game/main-menu"
 import { MatchmakingLobby } from "@/components/matchmaking/matchmaking-lobby"
+import { PreGameSync } from "@/components/matchmaking/pre-game-sync"
 import type { GameSettings } from "@/lib/game/types"
 import axios from "@/lib/axios"
 import { isAxiosError } from "axios"
@@ -17,6 +18,7 @@ import { AuthInput } from "@/components/auth/auth-input"
 import { AuthButton } from "@/components/auth/auth-button"
 import { AuthError } from "@/components/auth/auth-error"
 import { AuthDecoration } from "@/components/auth/auth-decoration"
+import { getWebSocketClient } from "@/lib/websocket-client"
 
 const isDev = process.env.NODE_ENV === "development"
 
@@ -60,6 +62,7 @@ export default function GameClient() {
   const [deckIds, setDeckIds] = useState<string[]>([])
   const [matchId, setMatchId] = useState<string | null>(null)
   const [inMatchmaking, setInMatchmaking] = useState(false)
+  const [inPreGameSync, setInPreGameSync] = useState(false)
   const [settings, setSettings] = useState<GameSettings>({
     volume: 0.7,
     soundEnabled: true,
@@ -131,6 +134,8 @@ export default function GameClient() {
         }
 
         setUser(response.data.user)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+        console.log('[GameClient] User stored in localStorage:', response.data.user)
         setStatus("authenticated")
       } catch (error) {
         if (isMounted) {
@@ -196,12 +201,60 @@ export default function GameClient() {
         setDeckIds(defaultDeck.cardIds)
       }
 
+      // Initialize WebSocket connection
+      const wsClient = getWebSocketClient()
+      const token = localStorage.getItem('token') || ''
+      wsClient.connect(token)
+      wsClient.joinMatch(foundMatchId)
+
+      // Listen for opponent state updates
+      wsClient.onGameStateChange((data) => {
+        if (isDev) {
+          console.log("Received opponent state update:", data)
+        }
+        window.dispatchEvent(new CustomEvent('opponentStateUpdate', {
+          detail: {
+            downloadSpeed: data.downloadSpeed,
+            energyGenerated: data.energyGenerated,
+            updatedAt: data.timestamp,
+          },
+        }))
+      })
+
+      // Listen for card usage updates
+      wsClient.onCardUsed((data) => {
+        if (isDev) {
+          console.log("Received card usage update:", data)
+        }
+        window.dispatchEvent(new CustomEvent('cardUsedUpdate', {
+          detail: {
+            opponentId: data.userId,
+            cardId: data.cardId,
+            cardName: data.cardName,
+          },
+        }))
+      })
+
+      // Listen for match ended updates
+      wsClient.onMatchEnded((data) => {
+        if (isDev) {
+          console.log("Received match ended update:", data)
+        }
+        window.dispatchEvent(new CustomEvent('matchEndedUpdate', {
+          detail: {
+            matchId: data.matchId,
+            winnerId: data.winnerId,
+            loserId: data.loserId,
+          },
+        }))
+      })
+
       setMatchId(foundMatchId)
-      setGameStarted(true)
       setInMatchmaking(false)
+      setInPreGameSync(true)
       isTransitioningToGame.current = false
       if (isDev) {
-        console.log("Game started with matchId:", foundMatchId)
+        console.log("Entering pre-game sync with matchId:", foundMatchId)
       }
     } catch (error) {
       console.error("Failed to load deck for match:", error)
@@ -215,6 +268,14 @@ export default function GameClient() {
 
   const handleMatchmakingCancel = useCallback(() => {
     setInMatchmaking(false)
+  }, [])
+
+  const handleSyncComplete = useCallback(() => {
+    if (isDev) {
+      console.log("Sync complete, starting game")
+    }
+    setInPreGameSync(false)
+    setGameStarted(true)
   }, [])
 
   const handleLogout = useCallback(async () => {
@@ -504,6 +565,16 @@ export default function GameClient() {
     )
   }
 
+  if (inPreGameSync && matchId && user) {
+    return (
+      <PreGameSync
+        matchId={matchId}
+        currentUser={user}
+        onSyncComplete={handleSyncComplete}
+      />
+    )
+  }
+
   if (!gameStarted && !isTransitioningToGame.current) {
     return (
       <MainMenu
@@ -525,6 +596,7 @@ export default function GameClient() {
       matchId={matchId}
       settings={settings}
       onSettingsChange={setSettings}
+      user={user}
     />
   )
 }

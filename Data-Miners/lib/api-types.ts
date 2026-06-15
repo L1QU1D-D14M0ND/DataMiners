@@ -56,8 +56,16 @@ export interface LogoutResponse {
 // Profile API
 export interface ProfileResponse {
   user: UserProfile
+  cards: UserCard[]
   sets: CosmeticSet[]
   user_cosmetics: Cosmetic[]
+}
+
+export interface UserCard {
+  id: number
+  name: string
+  is_default: boolean
+  unlocked: boolean
 }
 
 export interface Cosmetic {
@@ -180,6 +188,7 @@ export interface MatchmakingQueue {
   user_id: number
   queue_name: string
   skill_rating: number
+  experience_points: number
   preferences: MatchmakingPreferences
   status: 'waiting' | 'matched' | 'cancelled'
   expires_at: string
@@ -194,6 +203,7 @@ export interface MatchData {
   players: Array<{
     user_id: number
     skill_rating: number
+    experience_points: number
   }>
   created_at: string
 }
@@ -204,6 +214,7 @@ export interface QueueStatus {
   queue_id?: number
   queue_name?: string
   skill_rating?: number
+  experience_points?: number
   expires_at?: string
   time_in_queue?: number
   match_data?: MatchData
@@ -213,6 +224,7 @@ export interface JoinQueueResponse {
   queue_id: number
   queue_name: string
   skill_rating: number
+  experience_points: number
   expires_at: string
 }
 

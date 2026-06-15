@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\GameSession;
+use App\Services\CardUnlockService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +13,7 @@ class GameResultController extends Controller
 {
     private const WIN_EXPERIENCE_REWARD = 50;
     private const WIN_CREDITS_REWARD = 100;
-    private const WIN_RANK_SCORE_REWARD = 5;
+    private const WIN_RANK_SCORE_REWARD = 10;
 
     public function store(Request $request): JsonResponse
     {
@@ -23,6 +24,7 @@ class GameResultController extends Controller
             'game_session_id' => ['nullable', 'integer', 'exists:game_sessions,id'],
             'match_id' => ['nullable', 'string', 'exists:game_sessions,match_id'],
             'outcome' => ['required', 'string', 'in:win,loss'],
+            'reporting_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'stats' => ['nullable', 'array'],
             'stats.time_elapsed_seconds' => ['nullable', 'integer', 'min:0'],
             'stats.energy_generated' => ['nullable', 'integer', 'min:0'],
@@ -31,6 +33,17 @@ class GameResultController extends Controller
 
         $user = $request->user();
         Log::info('GameResult.store user', ['user_id' => $user?->id ?? null, 'validated' => $validated]);
+
+        // If user is not authenticated, try to get user from reporting_user_id
+        if (!$user && !empty($validated['reporting_user_id'])) {
+            $user = \App\Models\User::find($validated['reporting_user_id']);
+            Log::info('GameResult.store user from reporting_user_id', ['user_id' => $user?->id ?? null]);
+        }
+
+        if (!$user) {
+            Log::error('GameResult.store: No authenticated user and no valid reporting_user_id', ['validated' => $validated]);
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
 
         // Validate the session exists, belongs to the user, and is completed
 $session = null;
@@ -74,6 +87,10 @@ $session = null;
             $user->rank_score = ($user->rank_score ?? 0) + $reward['rank_score'];
             $user->save();
 
+            // Check for level-ups and unlock cards
+            $cardUnlockService = new CardUnlockService();
+            $cardUnlockService->checkAndUnlockCardsForUser($user);
+
             // Mark session as rewarded to prevent duplicate rewards
             $session->rewarded = true;
             $session->save();
@@ -94,7 +111,7 @@ $session = null;
 
     /**
      * Loss rewards are rounded down because user rank_score is an integer column.
-     * Losses receive half of the full reward value, not a negative penalty.
+     * Losses receive half XP and credits, but deduct full rank_score (-5).
      */
     private function rewardForOutcome(string $outcome): array
     {
@@ -103,7 +120,9 @@ $session = null;
         return [
             'experience' => (int) floor(self::WIN_EXPERIENCE_REWARD * $multiplier),
             'credits' => (int) floor(self::WIN_CREDITS_REWARD * $multiplier),
-            'rank_score' => (int) floor(self::WIN_RANK_SCORE_REWARD * $multiplier),
+            'rank_score' => $outcome === 'win' 
+                ? (int) floor(self::WIN_RANK_SCORE_REWARD * $multiplier)
+                : -self::WIN_RANK_SCORE_REWARD,
         ];
     }
 }

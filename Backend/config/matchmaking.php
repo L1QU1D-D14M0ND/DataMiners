@@ -20,11 +20,20 @@ return [
     // Initial skill rating range for matching (default: ±100)
     'skill_range' => env('MATCHMAKING_SKILL_RANGE', 100),
 
-    // Skill range expansion per 30 seconds of waiting
+    // Skill range expansion per 5 seconds of waiting
     'skill_range_expansion' => env('MATCHMAKING_SKILL_RANGE_EXPANSION', 50),
 
     // Maximum skill range (prevents matching with vastly different players)
     'max_skill_range' => env('MATCHMAKING_MAX_SKILL_RANGE', 500),
+
+    // Initial experience points range for matching (default: ±500)
+    'experience_range' => env('MATCHMAKING_EXPERIENCE_RANGE', 500),
+
+    // Experience range expansion per 5 seconds of waiting
+    'experience_range_expansion' => env('MATCHMAKING_EXPERIENCE_RANGE_EXPANSION', 250),
+
+    // Maximum experience range (prevents matching with vastly different experience levels)
+    'max_experience_range' => env('MATCHMAKING_MAX_EXPERIENCE_RANGE', 2000),
 
     // Default skill rating for new players (uses rank_score from users table)
     'default_skill_rating' => env('MATCHMAKING_DEFAULT_SKILL_RATING', 1000),
