@@ -29,13 +29,13 @@ function ActiveCardTooltip({ card, onUseCard, onHover }: ActiveCardTooltipProps)
     <div className="ark-card scanlines px-3 py-2 max-w-[280px] sm:max-w-[320px] mx-auto slide-in-top">
       <div className="flex items-start gap-2">
         <div className="flex-shrink-0 opacity-70">
-          {getCardIcon(card.iconType, "w-5 h-5 sm:w-6 sm:h-6 text-white")}
+          {getCardIcon(card.iconType, "w-5 h-5 sm:w-6 sm:h-6 text-foreground")}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-heading text-[11px] sm:text-[12px] tracking-wider text-white/90 uppercase truncate">
+          <div className="font-heading text-[11px] sm:text-[12px] tracking-wider text-foreground/90 uppercase truncate">
             {card.name}
           </div>
-          <p className="text-[10px] sm:text-[11px] text-white/50 leading-relaxed mt-0.5">{card.description}</p>
+          <p className="text-[10px] sm:text-[11px] text-foreground/50 leading-relaxed mt-0.5">{card.description}</p>
         </div>
       </div>
       <button
@@ -170,10 +170,10 @@ export function CardHand({ deckIds }: CardHandProps) {
       {/* Hand container */}
       <div className="ark-card scanlines overflow-hidden">
         {/* Header row */}
-        <div className="flex items-center justify-between px-3 py-1.5 sm:px-4 sm:py-2 border-b border-white/10">
-          <span className="font-serif italic text-[10px] sm:text-[11px] text-white/40 tracking-wider">CARD HAND</span>
+        <div className="flex items-center justify-between px-3 py-1.5 sm:px-4 sm:py-2 border-b border-border">
+          <span className="font-serif italic text-[10px] sm:text-[11px] text-foreground/40 tracking-wider">CARD HAND</span>
           <div className="flex items-center gap-1">
-            <span className="font-mono text-[10px] sm:text-[11px] text-white/30">{hand.length}/{HAND_SIZE}</span>
+            <span className="font-mono text-[10px] sm:text-[11px] text-foreground/30">{hand.length}/{HAND_SIZE}</span>
             <button
               onClick={toggleCollapse}
               onMouseEnter={handleHover}
@@ -199,16 +199,16 @@ export function CardHand({ deckIds }: CardHandProps) {
                   onMouseEnter={handleHover}
                   className={`
                     relative ark-floppy flex flex-col items-center gap-1 p-2 pb-4 sm:p-2.5 sm:pb-5
-                    w-16 sm:w-20 md:w-24 transition-all duration-150 select-none border border-white/25 touch-manipulation
+                    w-16 sm:w-20 md:w-24 transition-all duration-150 select-none border border-border/25 touch-manipulation
                     ${isActive
-                      ? "!bg-white/15 -translate-y-1 scale-105 z-10"
+                      ? "!bg-foreground/15 -translate-y-1 scale-105 z-10"
                       : "hover:-translate-y-0.5 hover:scale-[1.02] active:scale-95"
                     }
                   `}
                 >
 
                   {/* Icon */}
-                  <div className={`${isActive ? "text-white" : "text-white/70"}`}>
+                  <div className={`${isActive ? "text-foreground" : "text-foreground/70"}`}>
                     {getCardIcon(card.iconType, "w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7")}
                   </div>
 
@@ -216,7 +216,7 @@ export function CardHand({ deckIds }: CardHandProps) {
                   <div
                     className={`
                       font-heading text-[8px] sm:text-[9px] md:text-[10px] uppercase tracking-wider text-center leading-tight truncate w-full px-1
-                      ${isActive ? "text-white" : "text-white/70"}
+                      ${isActive ? "text-foreground" : "text-foreground/70"}
                     `}
                   >
                     {card.shortName}
@@ -230,7 +230,7 @@ export function CardHand({ deckIds }: CardHandProps) {
 
                   {/* Active indicator */}
                   {isActive && (
-                    <div className="absolute inset-0 border border-white/40 pointer-events-none" />
+                    <div className="absolute inset-0 border border-foreground/40 pointer-events-none" />
                   )}
                 </button>
               )
@@ -242,7 +242,7 @@ export function CardHand({ deckIds }: CardHandProps) {
                 key={`empty-${i}`}
                 className="w-16 sm:w-20 md:w-24 ark-floppy flex items-center justify-center py-4 sm:py-5 border-dashed opacity-20"
               >
-                <span className="font-mono text-[10px] sm:text-[11px] text-white/40">—</span>
+                <span className="font-mono text-[10px] sm:text-[11px] text-foreground/40">—</span>
               </div>
             ))}
           </div>

@@ -38,6 +38,7 @@ export interface UserProfile {
     name: string
     cosmetic_type: string
   }
+  equipped_set_id?: number | null
 }
 
 export interface LoginResponse {
@@ -94,6 +95,51 @@ export interface EquippedCosmeticsRequest {
 }
 
 export interface EquippedCosmeticsResponse {
+  message: string
+}
+
+// Set API
+export interface CreateSetRequest {
+  set_name: string
+  cosmetic_ids: number[]
+}
+
+export interface CreateSetResponse {
+  message: string
+  set: {
+    id: number
+    set_name: string
+    cosmetics: Cosmetic[]
+  }
+}
+
+export interface SwitchEquippedSetRequest {
+  equipped_set_id: number | null
+}
+
+export interface SwitchEquippedSetResponse {
+  message: string
+}
+
+export interface AddCosmeticToSetRequest {
+  set_id: number
+  cosmetic_id: number
+}
+
+export interface AddCosmeticToSetResponse {
+  message: string
+}
+
+export interface RemoveCosmeticFromSetRequest {
+  set_id: number
+  cosmetic_id: number
+}
+
+export interface RemoveCosmeticFromSetResponse {
+  message: string
+}
+
+export interface DeleteSetResponse {
   message: string
 }
 

@@ -135,7 +135,7 @@ export function PreGameSync({ matchId, currentUser, onSyncComplete }: PreGameSyn
   }, [isConnected])
 
   return (
-    <div className="min-h-screen bg-[#050508] flex items-center justify-center px-4 py-12 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12 relative overflow-hidden">
       {/* Background grid pattern */}
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.02]"
@@ -151,8 +151,8 @@ export function PreGameSync({ matchId, currentUser, onSyncComplete }: PreGameSyn
       {/* Main content */}
       <div className="relative z-10 w-full max-w-4xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-heading text-[#d4a853] mb-2 tracking-wider">MATCH SYNC</h1>
-          <p className="text-white/60 text-sm">Establishing real-time connection with opponent</p>
+          <h1 className="text-3xl font-heading text-ark-gold mb-2 tracking-wider">MATCH SYNC</h1>
+          <p className="text-foreground/60 text-sm">Establishing real-time connection with opponent</p>
         </div>
 
         {/* User profiles */}
@@ -185,12 +185,12 @@ export function PreGameSync({ matchId, currentUser, onSyncComplete }: PreGameSyn
         {/* Sync progress */}
         <div className="ark-card p-4 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <span className="font-heading text-xs tracking-wider text-white/80">CONNECTION STATUS</span>
-            <span className="font-mono text-xs text-[#d4a853]">{syncProgress}%</span>
+            <span className="font-heading text-xs tracking-wider text-foreground/80">CONNECTION STATUS</span>
+            <span className="font-mono text-xs text-ark-gold">{syncProgress}%</span>
           </div>
-          <div className="w-full bg-black/30 h-2 rounded overflow-hidden">
+          <div className="w-full bg-card h-2 rounded overflow-hidden">
             <div
-              className="bg-[#d4a853] h-2 rounded transition-all duration-500"
+              className="bg-ark-gold h-2 rounded transition-all duration-500"
               style={{ width: `${syncProgress}%` }}
             />
           </div>

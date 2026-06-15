@@ -24,6 +24,7 @@ class GameResultTest extends TestCase
 
         $gameSession = \App\Models\GameSession::create([
             'match_id' => 'match-win-1',
+            'is_matchmade' => true,
             'player1_id' => $user->id,
             'player2_id' => $opponent->id,
             'status' => 'completed',
@@ -46,13 +47,13 @@ class GameResultTest extends TestCase
             ->assertOk()
             ->assertJsonPath('reward.experience', 50)
             ->assertJsonPath('reward.credits', 100)
-            ->assertJsonPath('reward.rank_score', 5);
+            ->assertJsonPath('reward.rank_score', 10);
 
         $user->refresh();
 
         $this->assertSame(60, $user->experience_points);
         $this->assertSame(120, $user->credits);
-        $this->assertSame(6, $user->rank_score);
+        $this->assertSame(11, $user->rank_score);
     }
 
     public function test_loss_result_awards_half_rewards_rounded_down_for_rank_score(): void
@@ -68,6 +69,7 @@ class GameResultTest extends TestCase
 
         $gameSession = \App\Models\GameSession::create([
             'match_id' => 'match-loss-1',
+            'is_matchmade' => true,
             'player1_id' => $user->id,
             'player2_id' => $opponent->id,
             'status' => 'completed',
@@ -85,12 +87,12 @@ class GameResultTest extends TestCase
             ->assertOk()
             ->assertJsonPath('reward.experience', 25)
             ->assertJsonPath('reward.credits', 50)
-            ->assertJsonPath('reward.rank_score', 2);
+            ->assertJsonPath('reward.rank_score', -10);
 
         $user->refresh();
 
         $this->assertSame(35, $user->experience_points);
         $this->assertSame(70, $user->credits);
-        $this->assertSame(3, $user->rank_score);
+        $this->assertSame(-9, $user->rank_score);
     }
 }

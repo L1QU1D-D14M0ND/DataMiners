@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('game_sessions', function (Blueprint $table) {
             $table->id();
             $table->string('match_id')->unique();
-            $table->foreignId('player1_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('player2_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('player1_id')->constrained('users')->onDelete('restrict');
+            $table->foreignId('player2_id')->constrained('users')->onDelete('restrict');
             $table->json('player1_state')->nullable();
             $table->json('player2_state')->nullable();
             $table->foreignId('winner_id')->nullable()->constrained('users');

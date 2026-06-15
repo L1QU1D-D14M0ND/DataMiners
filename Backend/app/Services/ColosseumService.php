@@ -294,6 +294,7 @@ class ColosseumService
                 if (!$session) {
                     GameSession::create([
                         'match_id' => $matchId,
+                        'is_matchmade' => true,
                         'player1_id' => $player1Id,
                         'player2_id' => $player2Id,
                         'status' => 'active',

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use App\Models\Role;
 use App\Services\CardUnlockService;
+use App\Services\CosmeticUnlockService;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
@@ -15,6 +16,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $cardUnlockService = new CardUnlockService();
+        $cosmeticUnlockService = new CosmeticUnlockService();
         $adminRole = Role::where('name', 'Administrator')->first();
 
         $admin = User::create([
@@ -32,19 +34,16 @@ class UserSeeder extends Seeder
         // Unlock cards based on level (admin has max XP, so should unlock all)
         $cardUnlockService->checkAndUnlockCardsForUser($admin);
 
+        // Unlock default cosmetics for admin
+        $cosmeticUnlockService->unlockDefaultCosmetics($admin);
+        // Unlock cosmetics based on level (admin has max XP, so should unlock all)
+        $cosmeticUnlockService->checkAndUnlockCosmeticsForUser($admin);
+
         // Create default deck for admin user
         // The Deck model's created event will automatically add the 8 default cards
         $admin->decks()->create([
             'deck_name' => 'Default',
         ]);
-
-        // Attach default cosmetics for admin user
-        $defaultCosmetics = \App\Models\Cosmetic::whereIn('name', [
-            'Default Frame',
-            'Default Picture',
-            'Default Card',
-            'Default Title',
-        ])->pluck('id');
 
         // Create default set for admin user
         $adminSet = $admin->sets()->create([
@@ -52,15 +51,13 @@ class UserSeeder extends Seeder
         ]);
 
         // Attach default cosmetics to admin's default set
-        if ($defaultCosmetics->count() > 0) {
-            foreach ($defaultCosmetics as $cosmeticId) {
-                $adminSet->cosmetics()->attach($cosmeticId);
-            }
-        }
+        $defaultCosmetics = \App\Models\Cosmetic::where('experience_unlock', 0)
+            ->where('credits_unlock', 0)
+            ->pluck('id');
 
         if ($defaultCosmetics->count() > 0) {
             foreach ($defaultCosmetics as $cosmeticId) {
-                $admin->cosmetics()->attach($cosmeticId, ['unlocked' => true]);
+                $adminSet->cosmetics()->attach($cosmeticId);
             }
         }
 
@@ -82,6 +79,11 @@ class UserSeeder extends Seeder
         // Unlock cards based on level (500 XP = level 5, so should unlock cards at levels 2 and 4)
         $cardUnlockService->checkAndUnlockCardsForUser($testUser1);
 
+        // Unlock default cosmetics for test user 1
+        $cosmeticUnlockService->unlockDefaultCosmetics($testUser1);
+        // Unlock cosmetics based on level (500 XP = level 5, so should NOT unlock level 6 cosmetics)
+        $cosmeticUnlockService->checkAndUnlockCosmeticsForUser($testUser1);
+
         // Create default deck for test user 1
         // The Deck model's created event will automatically add the 8 default cards
         $testUser1->decks()->create([
@@ -94,16 +96,13 @@ class UserSeeder extends Seeder
         ]);
 
         // Attach default cosmetics to test user 1's default set
-        if ($defaultCosmetics->count() > 0) {
-            foreach ($defaultCosmetics as $cosmeticId) {
-                $testUser1Set->cosmetics()->attach($cosmeticId);
-            }
-        }
+        $testUser1DefaultCosmetics = \App\Models\Cosmetic::where('experience_unlock', 0)
+            ->where('credits_unlock', 0)
+            ->pluck('id');
 
-        // Attach default cosmetics for test user 1
-        if ($defaultCosmetics->count() > 0) {
-            foreach ($defaultCosmetics as $cosmeticId) {
-                $testUser1->cosmetics()->attach($cosmeticId, ['unlocked' => true]);
+        if ($testUser1DefaultCosmetics->count() > 0) {
+            foreach ($testUser1DefaultCosmetics as $cosmeticId) {
+                $testUser1Set->cosmetics()->attach($cosmeticId);
             }
         }
 
@@ -113,14 +112,19 @@ class UserSeeder extends Seeder
             'password' => bcrypt(env('SEED_TEST_PASSWORD', 'TestPass123')),
             'role_id' => $playerRole?->id,
             'rank_score' => 1000,
-            'experience_points' => 500,
+            'experience_points' => 700,
             'credits' => 1000,
         ]);
 
         // Unlock default cards for test user 2
         $cardUnlockService->unlockDefaultCards($testUser2);
-        // Unlock cards based on level (500 XP = level 5, so should unlock cards at levels 2 and 4)
+        // Unlock cards based on level (700 XP = level 6, so should unlock cards at levels 2, 4, and 6)
         $cardUnlockService->checkAndUnlockCardsForUser($testUser2);
+
+        // Unlock default cosmetics for test user 2
+        $cosmeticUnlockService->unlockDefaultCosmetics($testUser2);
+        // Unlock cosmetics based on level (700 XP = level 6, so should unlock level 6 cosmetics)
+        $cosmeticUnlockService->checkAndUnlockCosmeticsForUser($testUser2);
 
         // Create default deck for test user 2
         // The Deck model's created event will automatically add the 8 default cards
@@ -134,16 +138,13 @@ class UserSeeder extends Seeder
         ]);
 
         // Attach default cosmetics to test user 2's default set
-        if ($defaultCosmetics->count() > 0) {
-            foreach ($defaultCosmetics as $cosmeticId) {
-                $testUser2Set->cosmetics()->attach($cosmeticId);
-            }
-        }
+        $testUser2DefaultCosmetics = \App\Models\Cosmetic::where('experience_unlock', 0)
+            ->where('credits_unlock', 0)
+            ->pluck('id');
 
-        // Attach default cosmetics for test user 2
-        if ($defaultCosmetics->count() > 0) {
-            foreach ($defaultCosmetics as $cosmeticId) {
-                $testUser2->cosmetics()->attach($cosmeticId, ['unlocked' => true]);
+        if ($testUser2DefaultCosmetics->count() > 0) {
+            foreach ($testUser2DefaultCosmetics as $cosmeticId) {
+                $testUser2Set->cosmetics()->attach($cosmeticId);
             }
         }
 

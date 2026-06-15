@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('card_usage_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('game_session_id')->constrained('game_sessions')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('game_session_id')->constrained('game_sessions')->onDelete('restrict');
+            $table->foreignId('user_id')->constrained('users')->onDelete('restrict');
             $table->string('card_id');
             $table->string('card_name');
             $table->timestamp('used_at')->nullable();

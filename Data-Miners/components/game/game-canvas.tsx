@@ -129,7 +129,7 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
     const handleMatchEndedUpdate = (event: Event) => {
       const detail = (event as CustomEvent).detail
       console.log('[GameCanvas] Match ended:', detail)
-      // Dispatch proper game events to trigger winning screen
+      // Dispatch proper game events to trigger win/lose screen
       const currentUserJson = localStorage.getItem('user')
       const currentUser = currentUserJson ? JSON.parse(currentUserJson) : null
       if (currentUser) {
@@ -140,8 +140,12 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
             }
           }))
         } else if (detail.loserId === currentUser.id) {
-          // Player quit - just return to menu (quitting is already handled in config menu)
-          onReturnToMenu?.()
+          // Player lost - dispatch gameLost event to show lose screen
+          window.dispatchEvent(new CustomEvent('gameLost', {
+            detail: {
+              victoryMethod: 'Defeat'
+            }
+          }))
         }
       }
     }
@@ -167,25 +171,25 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
   }, [])
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-black">
+    <div className="relative h-full w-full overflow-hidden bg-background">
       {/* Corner brackets */}
       <div className="absolute top-3 left-3 w-12 h-12 pointer-events-none opacity-20">
-        <svg viewBox="0 0 48 48" className="w-full h-full text-white">
+        <svg viewBox="0 0 48 48" className="w-full h-full text-foreground">
           <path d="M0 16 L0 0 L16 0" fill="none" stroke="currentColor" strokeWidth="1" />
         </svg>
       </div>
       <div className="absolute top-3 right-3 w-12 h-12 pointer-events-none opacity-20">
-        <svg viewBox="0 0 48 48" className="w-full h-full text-white">
+        <svg viewBox="0 0 48 48" className="w-full h-full text-foreground">
           <path d="M32 0 L48 0 L48 16" fill="none" stroke="currentColor" strokeWidth="1" />
         </svg>
       </div>
       <div className="absolute bottom-3 left-3 w-12 h-12 pointer-events-none opacity-20">
-        <svg viewBox="0 0 48 48" className="w-full h-full text-white">
+        <svg viewBox="0 0 48 48" className="w-full h-full text-foreground">
           <path d="M0 32 L0 48 L16 48" fill="none" stroke="currentColor" strokeWidth="1" />
         </svg>
       </div>
       <div className="absolute bottom-3 right-3 w-12 h-12 pointer-events-none opacity-20">
-        <svg viewBox="0 0 48 48" className="w-full h-full text-white">
+        <svg viewBox="0 0 48 48" className="w-full h-full text-foreground">
           <path d="M32 48 L48 48 L48 32" fill="none" stroke="currentColor" strokeWidth="1" />
         </svg>
       </div>
@@ -205,7 +209,7 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
       {/* Game canvas container */}
       <div className="absolute inset-0 flex items-center justify-center pt-12 pb-32 px-1 sm:pt-14 sm:pb-36 sm:px-2 lg:pt-16 lg:pb-24 lg:px-20">
         <div className="relative w-full h-full flex items-center justify-center">
-          <div ref={containerRef} className="overflow-hidden max-w-full max-h-full border border-white/10" style={{ touchAction: "manipulation" }} />
+          <div ref={containerRef} className="overflow-hidden max-w-full max-h-full border border-border" style={{ touchAction: "manipulation" }} />
           {/* Vignette overlay */}
           <div
             className="absolute inset-0 pointer-events-none"

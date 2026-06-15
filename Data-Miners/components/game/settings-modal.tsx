@@ -36,22 +36,22 @@ export function SettingsModal({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {theme === "dark" ? (
-              <Moon className="w-5 h-5 text-white/60" />
+              <Moon className="w-5 h-5 text-foreground/60" />
             ) : (
-              <Sun className="w-5 h-5 text-yellow-400" />
+              <Sun className="w-5 h-5 text-foreground/60" />
             )}
-            <span className="text-sm font-heading uppercase tracking-wider text-white/80">Dark Mode</span>
+            <span className="text-sm font-heading uppercase tracking-wider text-foreground/80">Dark Mode</span>
           </div>
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className={`w-12 h-6 transition-colors ${theme === "dark" ? "bg-[#d4a853]" : "bg-white/20"}`}
+            className={`w-12 h-6 transition-colors ${theme === "dark" ? "bg-ark-gold" : "bg-foreground/20"}`}
             style={{ clipPath: "polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%)" }}
             role="switch"
             aria-checked={theme === "dark"}
             aria-label="Toggle dark mode"
           >
             <div
-              className={`w-4 h-4 bg-white transition-transform ${theme === "dark" ? "translate-x-6" : "translate-x-1"}`}
+              className={`w-4 h-4 bg-foreground transition-transform ${theme === "dark" ? "translate-x-6" : "translate-x-1"}`}
               style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0 50%)" }}
             />
           </button>
@@ -61,22 +61,22 @@ export function SettingsModal({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {settings.soundEnabled ? (
-              <Volume2 className="w-5 h-5 text-white/60" />
+              <Volume2 className="w-5 h-5 text-foreground/60" />
             ) : (
-              <VolumeX className="w-5 h-5 text-white/40" />
+              <VolumeX className="w-5 h-5 text-foreground/40" />
             )}
-            <span className="text-sm font-heading uppercase tracking-wider text-white/80">Sound FX</span>
+            <span className="text-sm font-heading uppercase tracking-wider text-foreground/80">Sound FX</span>
           </div>
           <button
             onClick={() => onSettingsChange({ ...settings, soundEnabled: !settings.soundEnabled })}
-            className={`w-12 h-6 transition-colors ${settings.soundEnabled ? "bg-[#d4a853]" : "bg-white/20"}`}
+            className={`w-12 h-6 transition-colors ${settings.soundEnabled ? "bg-ark-gold" : "bg-foreground/20"}`}
             style={{ clipPath: "polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%)" }}
             role="switch"
             aria-checked={settings.soundEnabled}
             aria-label="Toggle sound effects"
           >
             <div
-              className={`w-4 h-4 bg-white transition-transform ${settings.soundEnabled ? "translate-x-6" : "translate-x-1"}`}
+              className={`w-4 h-4 bg-foreground transition-transform ${settings.soundEnabled ? "translate-x-6" : "translate-x-1"}`}
               style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0 50%)" }}
             />
           </button>
@@ -85,8 +85,8 @@ export function SettingsModal({
         {/* Volume slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-heading uppercase tracking-wider text-white/80">Volume</span>
-            <span className="font-mono text-sm text-[#d4a853]">{Math.round(settings.volume * 100)}%</span>
+            <span className="text-sm font-heading uppercase tracking-wider text-foreground/80">Volume</span>
+            <span className="font-mono text-sm text-ark-gold">{Math.round(settings.volume * 100)}%</span>
           </div>
           <input
             type="range"
@@ -105,22 +105,22 @@ export function SettingsModal({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {settings.musicEnabled ? (
-              <Volume2 className="w-5 h-5 text-white/60" />
+              <Volume2 className="w-5 h-5 text-foreground/60" />
             ) : (
-              <VolumeX className="w-5 h-5 text-white/40" />
+              <VolumeX className="w-5 h-5 text-foreground/40" />
             )}
-            <span className="text-sm font-heading uppercase tracking-wider text-white/80">Background Music</span>
+            <span className="text-sm font-heading uppercase tracking-wider text-foreground/80">Background Music</span>
           </div>
           <button
             onClick={() => onSettingsChange({ ...settings, musicEnabled: !settings.musicEnabled })}
-            className={`w-12 h-6 transition-colors ${settings.musicEnabled ? "bg-[#d4a853]" : "bg-white/20"}`}
+            className={`w-12 h-6 transition-colors ${settings.musicEnabled ? "bg-ark-gold" : "bg-foreground/20"}`}
             style={{ clipPath: "polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%)" }}
             role="switch"
             aria-checked={settings.musicEnabled}
             aria-label="Toggle background music"
           >
             <div
-              className={`w-4 h-4 bg-white transition-transform ${settings.musicEnabled ? "translate-x-6" : "translate-x-1"}`}
+              className={`w-4 h-4 bg-foreground transition-transform ${settings.musicEnabled ? "translate-x-6" : "translate-x-1"}`}
               style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0 50%)" }}
             />
           </button>
@@ -129,8 +129,8 @@ export function SettingsModal({
         {/* Music volume slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-heading uppercase tracking-wider text-white/80">Music Volume</span>
-            <span className="font-mono text-sm text-[#d4a853]">{Math.round(settings.musicVolume * 100)}%</span>
+            <span className="text-sm font-heading uppercase tracking-wider text-foreground/80">Music Volume</span>
+            <span className="font-mono text-sm text-ark-gold">{Math.round(settings.musicVolume * 100)}%</span>
           </div>
           <input
             type="range"

@@ -74,6 +74,16 @@ $session = null;
             return response()->json(['error' => 'Invalid game session or session not completed'], 404);
         }
 
+        // Only give rewards for matchmade games
+        if (!$session->is_matchmade) {
+            return response()->json([
+                'success' => true,
+                'outcome' => $validated['outcome'],
+                'reward' => null,
+                'message' => 'No rewards for non-matchmade games',
+            ]);
+        }
+
         // Check if rewards already granted for this session
         if ($session->rewarded) {
             return response()->json(['error' => 'Rewards already granted for this session'], 400);

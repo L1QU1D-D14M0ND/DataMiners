@@ -37,7 +37,7 @@ interface MainMenuProps {
   adminDashboardUrl?: string
 }
 
-type MenuScreen = "main" | "settings" | "decks" | "credits"
+type MenuScreen = "main" | "settings" | "decks"
 
 export function MainMenu({ onStartGame, onStartMatchmaking, settings, onSettingsChange, onLogout, user, adminDashboardUrl }: MainMenuProps) {
   const [currentScreen, setCurrentScreen] = useState<MenuScreen>("main")
@@ -105,7 +105,7 @@ export function MainMenu({ onStartGame, onStartMatchmaking, settings, onSettings
   useSoundSettings(settings)
 
   return (
-    <div className="fixed inset-0 bg-[#050508] flex items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 bg-background flex items-center justify-center overflow-hidden">
       {/* Animated background elements */}
       <AnimatedBackground />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -146,11 +146,10 @@ export function MainMenu({ onStartGame, onStartMatchmaking, settings, onSettings
           />
         )}
         {currentScreen === "decks" && <DeckEditor onBack={() => setCurrentScreen("main")} onDecksUpdated={loadDecks} initialDeckId={equippedDeckId} />}
-        {currentScreen === "credits" && <CreditsScreen onBack={() => setCurrentScreen("main")} />}
       </div>
 
       {/* Version number */}
-      <div className="absolute bottom-4 left-4 font-mono text-[10px] text-white/20 tracking-widest">v0.1.0-alpha</div>
+      <div className="absolute bottom-4 left-4 font-mono text-[10px] text-foreground/20 tracking-widest">v0.1.0-alpha</div>
 
       {/* Profile Modal */}
       <ProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
@@ -192,13 +191,13 @@ function MainMenuScreen({
       {/* Logo / Title */}
       <div className="text-center mb-2 sm:mb-4">
         <div className="relative inline-block">
-          <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-[0.2em] sm:tracking-[0.3em] text-white/90 text-glow-white">DATA MINERS</h1>
-          <div className="font-serif italic text-xs sm:text-sm lg:text-base text-[#d4a853] tracking-widest mt-1">
+          <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-[0.2em] sm:tracking-[0.3em] text-foreground/90 text-glow-white">DATA MINERS</h1>
+          <div className="font-serif italic text-xs sm:text-sm lg:text-base text-ark-gold tracking-widest mt-1">
             DIRECTOR TERMINAL
           </div>
           {/* Decorative lines - hidden on very small screens */}
-          <div className="absolute -left-6 sm:-left-8 top-1/2 w-4 sm:w-6 h-px bg-gradient-to-r from-transparent to-white/30 hidden xs:block" />
-          <div className="absolute -right-6 sm:-right-8 top-1/2 w-4 sm:w-6 h-px bg-gradient-to-l from-transparent to-white/30 hidden xs:block" />
+          <div className="absolute -left-6 sm:-left-8 top-1/2 w-4 sm:w-6 h-px bg-gradient-to-r from-transparent to-foreground/30 hidden xs:block" />
+          <div className="absolute -right-6 sm:-right-8 top-1/2 w-4 sm:w-6 h-px bg-gradient-to-l from-transparent to-foreground/30 hidden xs:block" />
         </div>
       </div>
 
@@ -211,10 +210,10 @@ function MainMenuScreen({
       {/* Deck Selector */}
       <div className="w-full max-w-xs">
         <div className="ark-card scanlines overflow-hidden">
-          <div className="p-3 border-b border-white/10 flex items-center justify-between">
+          <div className="p-3 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-[#d4a853]" />
-              <span className="font-heading text-xs tracking-wider text-white/90">LOADOUT</span>
+              <Layers className="w-4 h-4 text-ark-gold" />
+              <span className="font-heading text-xs tracking-wider text-foreground/90">LOADOUT</span>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -229,11 +228,11 @@ function MainMenuScreen({
           <div className="p-3">
             {loading ? (
               <div className="text-center py-6">
-                <div className="font-serif italic text-[11px] text-white/30">Loading decks...</div>
+                <div className="font-serif italic text-[11px] text-foreground/30">Loading decks...</div>
               </div>
             ) : decks.length === 0 ? (
               <div className="text-center py-6">
-                <div className="font-serif italic text-[11px] text-white/30 mb-3">No decks available</div>
+                <div className="font-serif italic text-[11px] text-foreground/30 mb-3">No decks available</div>
                 <button
                   onClick={() => onNavigate("decks")}
                   onMouseEnter={() => SoundManager.playHover()}
@@ -250,15 +249,15 @@ function MainMenuScreen({
                     value={equippedDeckId || ""}
                     onChange={(e) => onEquipDeck(Number(e.target.value))}
                     onMouseEnter={() => SoundManager.playHover()}
-                    className="flex-1 bg-black/30 border border-white/20 px-3 py-2 text-xs text-white font-heading tracking-wider focus:outline-none focus:border-[#d4a853]/50 cursor-pointer"
+                    className="flex-1 bg-card border border-border px-3 py-2 text-xs text-foreground font-heading tracking-wider focus:outline-none focus:border-ark-gold/50 cursor-pointer"
                   >
                     {decks.map((deck) => (
-                      <option key={deck.id} value={deck.id} className="bg-[#050508]">
+                      <option key={deck.id} value={deck.id} className="bg-background">
                         {deck.name} ({deck.cardIds.length}/8)
                       </option>
                     ))}
                   </select>
-                  <div className="font-mono text-[10px] text-white/40 px-2">
+                  <div className="font-mono text-[10px] text-foreground/40 px-2">
                     {decks.length} DECKS
                   </div>
                 </div>
@@ -267,8 +266,8 @@ function MainMenuScreen({
                 {equippedDeck && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="font-heading text-xs text-white/90">{equippedDeck.name}</div>
-                      <div className="font-mono text-[10px] text-[#d4a853]">{equippedDeck.cardIds.length}/8</div>
+                      <div className="font-heading text-xs text-foreground/90">{equippedDeck.name}</div>
+                      <div className="font-mono text-[10px] text-ark-gold">{equippedDeck.cardIds.length}/8</div>
                     </div>
                     {equippedDeck.cardIds.length > 0 ? (
                       <div className="grid grid-cols-4 gap-1.5">
@@ -278,10 +277,10 @@ function MainMenuScreen({
                           return (
                             <div
                               key={cardId}
-                              className="relative aspect-square bg-black/30 border border-white/20 flex items-center justify-center hover:border-[#d4a853]/50 transition-colors"
+                              className="relative aspect-square bg-card border border-border flex items-center justify-center hover:border-ark-gold/50 transition-colors"
                               title={card.name}
                             >
-                              {getCardIcon(card.iconType, "w-4 h-4 text-white/60")}
+                              {getCardIcon(card.iconType, "w-4 h-4 text-foreground/60")}
                               <div className="absolute bottom-0.5 right-0.5 flex items-center gap-0.5">
                                 <Zap className="w-2 h-2 text-yellow-400" />
                                 <span className="font-mono text-[7px] text-yellow-400">{card.energyCost}</span>
@@ -292,15 +291,15 @@ function MainMenuScreen({
                         {Array.from({ length: 8 - equippedDeck.cardIds.length }).map((_, i) => (
                           <div
                             key={`empty-${i}`}
-                            className="aspect-square border border-dashed border-white/10 flex items-center justify-center"
+                            className="aspect-square border border-dashed border-border flex items-center justify-center"
                           >
-                            <div className="w-2 h-2 bg-white/10" />
+                            <div className="w-2 h-2 bg-foreground/10" />
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-4 border border-dashed border-white/10">
-                        <div className="font-serif italic text-[10px] text-white/30">Empty deck - add cards in editor</div>
+                      <div className="text-center py-4 border border-dashed border-border">
+                        <div className="font-serif italic text-[10px] text-foreground/30">Empty deck - add cards in editor</div>
                       </div>
                     )}
                   </div>
@@ -341,12 +340,6 @@ function MainMenuScreen({
           onClick={() => onNavigate("settings")}
         />
         <MenuButton
-          icon={<Info className="w-5 h-5" />}
-          label="CREDITS"
-          sublabel="Development team"
-          onClick={() => onNavigate("credits")}
-        />
-        <MenuButton
           icon={<LogOut className="w-5 h-5" />}
           label="LOGOUT"
           sublabel="Sign out session"
@@ -366,9 +359,9 @@ function MainMenuScreen({
 
       {/* Bottom decoration */}
       <div className="flex items-center gap-4 mt-4">
-        <div className="w-12 h-px bg-gradient-to-r from-transparent to-white/20" />
-        <div className="w-2 h-2 bg-[#d4a853]/50 rotate-45" />
-        <div className="w-12 h-px bg-gradient-to-l from-transparent to-white/20" />
+        <div className="w-12 h-px bg-gradient-to-r from-transparent to-border" />
+        <div className="w-2 h-2 bg-ark-gold/50 rotate-45" />
+        <div className="w-12 h-px bg-gradient-to-l from-transparent to-border" />
       </div>
     </div>
   )
@@ -407,8 +400,8 @@ function MenuButton({
         group relative w-full ark-floppy p-3 sm:p-4 flex items-center gap-3 sm:gap-4 transition-all duration-200
         ${
           primary
-            ? "border-[#d4a853]/50 hover:border-[#d4a853] hover:bg-[#d4a853]/10"
-            : "hover:border-white/40 hover:bg-white/5"
+            ? "border-ark-gold/50 hover:border-ark-gold hover:bg-ark-gold/10"
+            : "hover:border-border/40 hover:bg-foreground/5"
         }
         ${disabled ? "opacity-50 cursor-not-allowed" : ""}
       `}
@@ -416,7 +409,7 @@ function MenuButton({
       <div
         className={`
         flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center
-        ${primary ? "text-[#d4a853]" : "text-white/60 group-hover:text-white/80"}
+        ${primary ? "text-ark-gold" : "text-foreground/60 group-hover:text-foreground/80"}
       `}
       >
         {icon}
@@ -425,17 +418,17 @@ function MenuButton({
         <div
           className={`
           font-heading text-xs sm:text-sm tracking-wider truncate
-          ${primary ? "text-[#d4a853]" : "text-white/90"}
+          ${primary ? "text-ark-gold" : "text-foreground/90"}
         `}
         >
           {label}
         </div>
-        <div className="font-serif italic text-[9px] sm:text-[10px] text-white/40 mt-0.5 truncate">{sublabel}</div>
+        <div className="font-serif italic text-[9px] sm:text-[10px] text-foreground/40 mt-0.5 truncate">{sublabel}</div>
       </div>
       <ChevronRight
         className={`
         w-4 h-4 flex-shrink-0 transition-transform group-hover:translate-x-1
-        ${primary ? "text-[#d4a853]/60" : "text-white/30"}
+        ${primary ? "text-ark-gold/60" : "text-foreground/30"}
       `}
       />
     </button>
@@ -467,10 +460,10 @@ function SettingsScreen({
     <div className="slide-in-right">
       <div className="ark-card scanlines overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between">
+        <div className="p-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Settings className="w-5 h-5 text-white/60" />
-            <span className="font-heading text-sm tracking-wider text-white/90">SETTINGS</span>
+            <Settings className="w-5 h-5 text-foreground/60" />
+            <span className="font-heading text-sm tracking-wider text-foreground/90">SETTINGS</span>
           </div>
           <button onClick={handleBack} onMouseEnter={() => SoundManager.playHover()} className="ark-button p-2">
             <X className="w-4 h-4" />
@@ -483,20 +476,20 @@ function SettingsScreen({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {theme === "dark" ? (
-                <Moon className="w-4 h-4 text-white/60" />
+                <Moon className="w-4 h-4 text-foreground/60" />
               ) : (
-                <Sun className="w-4 h-4 text-white/60" />
+                <Sun className="w-4 h-4 text-foreground/60" />
               )}
               <div>
-                <div className="font-heading text-xs tracking-wider text-white/80">DISPLAY MODE</div>
-                <div className="font-serif italic text-[10px] text-white/40">Visual theme preference</div>
+                <div className="font-heading text-xs tracking-wider text-foreground/80">DISPLAY MODE</div>
+                <div className="font-serif italic text-[10px] text-foreground/40">Visual theme preference</div>
               </div>
             </div>
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className={`
                 relative w-12 h-6 transition-colors
-                ${theme === "dark" ? "bg-[#d4a853]/30" : "bg-white/10"}
+                ${theme === "dark" ? "bg-ark-gold/30" : "bg-foreground/10"}
               `}
               style={{
                 clipPath: "polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px))",
@@ -504,7 +497,7 @@ function SettingsScreen({
             >
               <div
                 className={`
-                  absolute top-1 w-4 h-4 bg-[#d4a853] transition-all
+                  absolute top-1 w-4 h-4 bg-ark-gold transition-all
                   ${theme === "dark" ? "left-7" : "left-1"}
                 `}
                 style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }}
@@ -517,16 +510,16 @@ function SettingsScreen({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {settings.volume > 0 ? (
-                  <Volume2 className="w-4 h-4 text-white/60" />
+                  <Volume2 className="w-4 h-4 text-foreground/60" />
                 ) : (
-                  <VolumeX className="w-4 h-4 text-white/60" />
+                  <VolumeX className="w-4 h-4 text-foreground/60" />
                 )}
                 <div>
-                  <div className="font-heading text-xs tracking-wider text-white/80">AUDIO LEVEL</div>
-                  <div className="font-serif italic text-[10px] text-white/40">Master volume control</div>
+                  <div className="font-heading text-xs tracking-wider text-foreground/80">AUDIO LEVEL</div>
+                  <div className="font-serif italic text-[10px] text-foreground/40">Master volume control</div>
                 </div>
               </div>
-              <span className="font-mono text-sm text-[#d4a853]">{Math.round(settings.volume * 100)}%</span>
+              <span className="font-mono text-sm text-ark-gold">{Math.round(settings.volume * 100)}%</span>
             </div>
             <input
               type="range"
@@ -544,15 +537,15 @@ function SettingsScreen({
             <div className="flex items-center gap-3">
               <Volume2 className="w-4 h-4 text-white/60" />
               <div>
-                <div className="font-heading text-xs tracking-wider text-white/80">SOUND EFFECTS</div>
-                <div className="font-serif italic text-[10px] text-white/40">In-game audio feedback</div>
+                <div className="font-heading text-xs tracking-wider text-foreground/80">SOUND EFFECTS</div>
+                <div className="font-serif italic text-[10px] text-foreground/40">In-game audio feedback</div>
               </div>
             </div>
             <button
               onClick={() => handleToggle("soundEnabled", !settings.soundEnabled)}
               className={`
                 relative w-12 h-6 transition-colors
-                ${settings.soundEnabled ? "bg-[#d4a853]/30" : "bg-white/10"}
+                ${settings.soundEnabled ? "bg-ark-gold/30" : "bg-foreground/10"}
               `}
               style={{
                 clipPath: "polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px))",
@@ -560,7 +553,7 @@ function SettingsScreen({
             >
               <div
                 className={`
-                  absolute top-1 w-4 h-4 bg-[#d4a853] transition-all
+                  absolute top-1 w-4 h-4 bg-ark-gold transition-all
                   ${settings.soundEnabled ? "left-7" : "left-1"}
                 `}
                 style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }}
@@ -575,54 +568,3 @@ function SettingsScreen({
 
 
 
-function CreditsScreen({ onBack }: { onBack: () => void }) {
-  const credits = [
-    { role: "Game Design", name: "Development Team" },
-    { role: "Programming", name: "v0 AI Assistant" },
-    { role: "Art Direction", name: "Arknights Inspired" },
-    { role: "UI/UX Design", name: "Tactical Interface Lab" },
-    { role: "Sound Design", name: "Web Audio API" },
-  ]
-
-  const handleBack = () => {
-    SoundManager.playClick()
-    onBack()
-  }
-
-  return (
-    <div className="slide-in-right">
-      <div className="ark-card scanlines overflow-hidden">
-        {/* Header */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Info className="w-5 h-5 text-white/60" />
-            <span className="font-heading text-sm tracking-wider text-white/90">CREDITS</span>
-          </div>
-          <button onClick={handleBack} onMouseEnter={() => SoundManager.playHover()} className="ark-button p-2">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Credits content */}
-        <div className="p-4 space-y-4">
-          <div className="text-center pb-4 border-b border-white/10">
-            <div className="font-heading text-lg tracking-[0.2em] text-white/90">GRID</div>
-            <div className="font-serif italic text-sm text-[#d4a853]">Power Command</div>
-          </div>
-
-          {credits.map((credit, index) => (
-            <div key={index} className="flex items-center justify-between py-2 border-b border-white/5">
-              <span className="font-serif italic text-xs text-white/50">{credit.role}</span>
-              <span className="font-heading text-xs tracking-wider text-white/80">{credit.name}</span>
-            </div>
-          ))}
-
-          <div className="text-center pt-4">
-            <div className="font-mono text-[10px] text-white/30">Built with Next.js, Phaser 3, and TypeScript</div>
-            <div className="font-mono text-[10px] text-white/20 mt-1">2024 - Open Source Project</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}

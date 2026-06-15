@@ -42,6 +42,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/profile', [UserController::class, 'profileApi'])->name('api.profile');
     Route::put('/api/profile/equipped-cosmetics', [UserController::class, 'updateEquippedCosmetics'])->name('api.profile.equipped-cosmetics');
 
+    // Set API routes
+    Route::post('/api/sets', [UserController::class, 'createSet'])->name('sets.create');
+    Route::put('/api/sets/equipped', [UserController::class, 'switchEquippedSet'])->name('sets.equipped');
+    Route::post('/api/sets/add-cosmetic', [UserController::class, 'addCosmeticToSet'])->name('sets.add-cosmetic');
+    Route::post('/api/sets/remove-cosmetic', [UserController::class, 'removeCosmeticFromSet'])->name('sets.remove-cosmetic');
+    Route::delete('/api/sets/{set}', [UserController::class, 'deleteSet'])->name('sets.delete');
+
     // Deck API routes
     Route::get('/api/decks', [DeckController::class, 'index'])->name('decks.index');
     Route::post('/api/decks', [DeckController::class, 'store'])->name('decks.store');

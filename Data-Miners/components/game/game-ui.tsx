@@ -89,17 +89,17 @@ function FloppyToolButton({
     <button
       onClick={onClick}
       className={`relative ark-floppy flex flex-col items-center gap-1 p-2 pb-4 transition-all duration-150 w-full ${
-        selected ? "!bg-white/95 !border-white" : isDanger ? "hover:border-red-500/60" : "hover:border-white/40"
+        selected ? "!bg-foreground/95 !border-foreground" : isDanger ? "hover:border-destructive/60" : "hover:border-foreground/40"
       }`}
     >
-      <div className={`${selected ? "text-black" : isDanger ? "text-red-400" : "text-white/80"}`}>{icon}</div>
-      <span className={`text-[9px] font-heading uppercase tracking-wider ${selected ? "text-black" : "text-white/60"}`}>
+      <div className={`${selected ? "text-background" : isDanger ? "text-destructive" : "text-foreground/80"}`}>{icon}</div>
+      <span className={`text-[9px] font-heading uppercase tracking-wider ${selected ? "text-background" : "text-foreground/60"}`}>
         {label}
       </span>
       {cost !== undefined && (
-        <span className={`text-[8px] font-mono ${selected ? "text-black/60" : "text-white/40"}`}>{cost}m</span>
+        <span className={`text-[8px] font-mono ${selected ? "text-background/60" : "text-foreground/40"}`}>{cost}m</span>
       )}
-      <span className={`absolute bottom-1 text-[7px] font-mono ${selected ? "text-black/40" : "text-white/30"}`}>
+      <span className={`absolute bottom-1 text-[7px] font-mono ${selected ? "text-background/40" : "text-foreground/30"}`}>
         [{shortcut}]
       </span>
     </button>
@@ -120,12 +120,12 @@ function ResultStat({
   muted?: boolean
 }) {
   return (
-    <div className={`bg-black/30 border p-3 ${muted ? "border-white/10" : "border-white/15"}`}>
-      <div className={`flex items-center gap-2 mb-2 ${muted ? "text-white/25" : "text-[#d4a853]"}`}>
+    <div className={`bg-card border p-3 ${muted ? "border-border" : "border-border"}`}>
+      <div className={`flex items-center gap-2 mb-2 ${muted ? "text-foreground/25" : "text-ark-gold"}`}>
         {icon}
         <span className="font-heading text-[10px] tracking-wider">{label}</span>
       </div>
-      <div className={`font-mono text-sm ${muted ? "text-white/35" : "text-white/90"}`}>{value}</div>
+      <div className={`font-mono text-sm ${muted ? "text-foreground/35" : "text-foreground/90"}`}>{value}</div>
     </div>
   )
 }
@@ -184,16 +184,18 @@ export function GameUI({
       })
 
       const backendReward = response.data.reward
-      const syncedReward: MatchReward = {
-        experience: backendReward?.experience ?? result.reward.experience,
-        credits: backendReward?.credits ?? result.reward.credits,
-        rankScore: backendReward?.rankScore ?? backendReward?.rank_score ?? result.reward.rankScore,
-      }
+      const syncedReward: MatchReward = backendReward
+        ? {
+            experience: backendReward.experience ?? result.reward.experience,
+            credits: backendReward.credits ?? result.reward.credits,
+            rankScore: backendReward.rankScore ?? backendReward.rank_score ?? result.reward.rankScore,
+          }
+        : result.reward
 
       setMatchResult((currentResult) =>
         currentResult ? { ...currentResult, reward: syncedReward } : currentResult,
       )
-      setRewardStatus("saved")
+      setRewardStatus(backendReward ? "saved" : "idle")
 
       // Fetch user profiles for the match result screen
       if (matchId) {
@@ -364,7 +366,7 @@ export function GameUI({
                 />
               ))}
 
-              <div className="w-px h-6 lg:w-full lg:h-px bg-white/10 my-0 lg:my-1" />
+              <div className="w-px h-6 lg:w-full lg:h-px bg-border my-0 lg:my-1" />
 
               <FloppyToolButtonMemo
                 icon={<Trash2 className="w-4 h-4 lg:w-5 lg:h-5" />}
@@ -389,7 +391,7 @@ export function GameUI({
                 <ZoomIn className="w-3 h-3 lg:w-4 lg:h-4" />
               </button>
 
-              <span className="font-mono text-[10px] lg:text-[11px] text-[#d4a853] w-8 text-center">
+              <span className="font-mono text-[10px] lg:text-[11px] text-ark-gold w-8 text-center">
                 {Math.round(zoomLevel.zoom * 100)}%
               </span>
 
@@ -401,7 +403,7 @@ export function GameUI({
                 <ZoomOut className="w-3 h-3 lg:w-4 lg:h-4" />
               </button>
 
-              <div className="w-px h-6 lg:w-full lg:h-px bg-white/10 my-0 lg:my-1" />
+              <div className="w-px h-6 lg:w-full lg:h-px bg-border my-0 lg:my-1" />
 
               <button onClick={handleZoomReset} className="ark-button p-1.5 lg:p-2">
                 <Maximize2 className="w-3 h-3 lg:w-4 lg:h-4" />
@@ -443,13 +445,13 @@ export function GameUI({
 
       {/* Exit Warning Modal */}
       {showExitWarning && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 pointer-events-auto z-50">
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 pointer-events-auto z-50">
           <div className="ark-card scanlines w-full max-w-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <AlertTriangle className="w-6 h-6 text-red-400" />
-              <h2 className="font-heading text-lg text-white tracking-wider">ABANDON MATCH?</h2>
+              <h2 className="font-heading text-lg text-foreground tracking-wider">ABANDON MATCH?</h2>
             </div>
-            <p className="text-white/70 text-sm mb-6">
+            <p className="text-foreground/70 text-sm mb-6">
               You are currently in a PvP match. Leaving now will count as a concession and you will lose the match.
             </p>
             {concedeError && (
@@ -469,7 +471,7 @@ export function GameUI({
               >
                 {isConceding ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" />
                     <span>CONCEDING...</span>
                   </>
                 ) : (
@@ -486,25 +488,25 @@ export function GameUI({
 
       {/* Match Result Modal */}
       {matchResult && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 pointer-events-auto z-50">
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 pointer-events-auto z-50">
           <div className="ark-card scanlines w-[min(92vw,760px)] max-h-[90vh] overflow-y-auto p-5 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 border-b border-white/10 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 border-b border-border pb-4">
               <div>
-                <div className="text-[#d4a853] text-3xl sm:text-4xl font-heading tracking-wider">
+                <div className="text-ark-gold text-3xl sm:text-4xl font-heading tracking-wider">
                   {matchResult.outcome === "win" ? "VICTORY" : "DEFEAT"}
                 </div>
-                <div className="text-white/60 text-xs sm:text-sm mt-1">
+                <div className="text-foreground/60 text-xs sm:text-sm mt-1">
                   {matchResult.outcome === "win"
                     ? "Alien data secured and uploaded to your network."
                     : "Operation ended. Partial compensation has been credited."}
                 </div>
                 {matchResult.victoryMethod && (
-                  <div className="text-white/40 text-xs mt-2 font-mono">
+                  <div className="text-foreground/40 text-xs mt-2 font-mono">
                     VICTORY METHOD: {matchResult.victoryMethod.toUpperCase()}
                   </div>
                 )}
               </div>
-              <div className="font-mono text-[10px] text-white/40 sm:text-right">
+              <div className="font-mono text-[10px] text-foreground/40 sm:text-right">
                 {rewardStatus === "saving" && "SYNCING REWARDS"}
                 {rewardStatus === "saved" && "REWARDS APPLIED"}
                 {rewardStatus === "failed" && "REWARD SYNC FAILED"}
@@ -528,9 +530,9 @@ export function GameUI({
               />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 py-5 border-t border-white/10">
-              <div className="border border-white/10 bg-black/20 p-4">
-                <div className="font-heading text-xs tracking-wider text-white/80 mb-3">YOUR OPERATION</div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 py-5 border-t border-border">
+              <div className="border border-border bg-card p-4">
+                <div className="font-heading text-xs tracking-wider text-foreground/80 mb-3">YOUR OPERATION</div>
                 <div className="grid grid-cols-2 gap-3">
                   <ResultStat
                     icon={<Clock className="w-4 h-4" />}
@@ -555,8 +557,8 @@ export function GameUI({
                 </div>
               </div>
 
-              <div className="border border-white/10 bg-black/20 p-4">
-                <div className="font-heading text-xs tracking-wider text-white/80 mb-3">RIVAL OPERATION</div>
+              <div className="border border-border bg-card p-4">
+                <div className="font-heading text-xs tracking-wider text-foreground/80 mb-3">RIVAL OPERATION</div>
                 <div className="grid grid-cols-2 gap-3">
                   <ResultStat
                     icon={<Clock className="w-4 h-4" />}
@@ -583,26 +585,28 @@ export function GameUI({
               </div>
             </div>
 
-            <div className="border border-[#d4a853]/25 bg-[#d4a853]/5 p-4 mb-5">
-              <div className="font-heading text-xs tracking-wider text-[#d4a853] mb-3">REWARDS</div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <ResultStat
-                  icon={<Star className="w-4 h-4" />}
-                  label="EXPERIENCE"
-                  value={`+${matchResult.reward.experience}`}
-                />
-                <ResultStat
-                  icon={<Coins className="w-4 h-4" />}
-                  label="CREDITS"
-                  value={`+${matchResult.reward.credits}`}
-                />
-                <ResultStat
-                  icon={<Trophy className="w-4 h-4" />}
-                  label="RANK SCORE"
-                  value={`+${matchResult.reward.rankScore}`}
-                />
+            {matchId && (
+              <div className="border border-ark-gold/25 bg-ark-gold/5 p-4 mb-5">
+                <div className="font-heading text-xs tracking-wider text-ark-gold mb-3">REWARDS</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <ResultStat
+                    icon={<Star className="w-4 h-4" />}
+                    label="EXPERIENCE"
+                    value={`+${matchResult.reward.experience}`}
+                  />
+                  <ResultStat
+                    icon={<Coins className="w-4 h-4" />}
+                    label="CREDITS"
+                    value={`+${matchResult.reward.credits}`}
+                  />
+                  <ResultStat
+                    icon={<Trophy className="w-4 h-4" />}
+                    label="RANK SCORE"
+                    value={matchResult.reward.rankScore >= 0 ? `+${matchResult.reward.rankScore}` : `${matchResult.reward.rankScore}`}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <button
               onClick={() => {

@@ -16,7 +16,7 @@ use App\Models\Deck;
 use App\Models\Set;
 use App\Models\GameLog;
 
-#[Fillable(['name', 'email', 'password', 'rank_score', 'experience_points', 'credits', 'play_time', 'role_id', 'equipped_profile_picture_id', 'equipped_frame_id', 'equipped_card_id', 'equipped_title_id'])]
+#[Fillable(['name', 'email', 'password', 'rank_score', 'experience_points', 'credits', 'play_time', 'role_id', 'equipped_profile_picture_id', 'equipped_frame_id', 'equipped_card_id', 'equipped_title_id', 'equipped_set_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -141,5 +141,13 @@ class User extends Authenticatable
     public function equippedTitle()
     {
         return $this->belongsTo(Cosmetic::class, 'equipped_title_id');
+    }
+
+    /**
+     * Get the equipped set.
+     */
+    public function equippedSet()
+    {
+        return $this->belongsTo(Set::class, 'equipped_set_id');
     }
 }

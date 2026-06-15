@@ -23,15 +23,15 @@ return new class extends Migration
             $table->foreign('game_log_id')
                 ->references('id')
                 ->on('game_logs')
-                ->onDelete('cascade');
+                ->onDelete('restrict');
             $table->foreign('cards_card_id')
                 ->references('id')
                 ->on('cards')
-                ->onDelete('cascade');
+                ->onDelete('restrict');
             $table->foreign('user_id')
                 ->references('id')
                 ->on('users')
-                ->onDelete('cascade');
+                ->onDelete('restrict');
         });
     }
 

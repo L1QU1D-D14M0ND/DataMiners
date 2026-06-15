@@ -1,82 +1,85 @@
+/* Tailwind CSS imports */
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 /* Arknights War Table Theme - High contrast tactical */
 :root {
-  --background: oklch(0.95 0.01 220);
-  --foreground: oklch(0.1 0.02 220);
-  --card: oklch(0.98 0.005 220);
-  --card-foreground: oklch(0.1 0.02 220);
-  --popover: oklch(0.98 0.005 220);
-  --popover-foreground: oklch(0.1 0.02 220);
-  --primary: oklch(0.95 0.01 220);
-  --primary-foreground: oklch(0.1 0.02 220);
-  --secondary: oklch(0.9 0.02 220);
-  --secondary-foreground: oklch(0.1 0.02 220);
-  --muted: oklch(0.85 0.02 220);
-  --muted-foreground: oklch(0.4 0.02 220);
-  --accent: oklch(0.85 0.02 55);
-  --accent-foreground: oklch(0.1 0.02 55);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.95 0.01 25);
-  --border: oklch(0.8 0.02 220);
-  --input: oklch(0.9 0.02 220);
-  --ring: oklch(0.7 0.1 55);
-  --chart-1: oklch(0.7 0.15 195);
-  --chart-2: oklch(0.6 0.15 145);
-  --chart-3: oklch(0.65 0.18 85);
-  --chart-4: oklch(0.55 0.15 25);
-  --chart-5: oklch(0.6 0.18 280);
+  --background: #f5f5f5;
+  --foreground: #1a1a1a; /* Main text color */
+  --card: #fafafa;
+  --card-foreground: #1a1a1a; /* Card text color */
+  --popover: #fafafa;
+  --popover-foreground: #1a1a1a; /* Popover text color */
+  --primary: #f5f5f5;
+  --primary-foreground: #1a1a1a; /* Primary button text color */
+  --secondary: #e5e5e5;
+  --secondary-foreground: #1a1a1a; /* Secondary button text color */
+  --muted: #d4d4d4;
+  --muted-foreground: #666666; /* Muted text color */
+  --accent: #d4a853;
+  --accent-foreground: #1a1a1a; /* Accent text color */
+  --destructive: #cc3333;
+  --destructive-foreground: #f5f5f5; /* Destructive button text color */
+  --border: #cccccc;
+  --input: #e5e5e5;
+  --ring: #d4a853;
+  --chart-1: #3b82f6;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #ef4444;
+  --chart-5: #8b5cf6;
   --radius: 0rem;
-  --sidebar: oklch(0.95 0.005 220);
-  --sidebar-foreground: oklch(0.1 0.02 220);
-  --sidebar-primary: oklch(0.7 0.15 55);
-  --sidebar-primary-foreground: oklch(0.1 0.02 55);
-  --sidebar-accent: oklch(0.9 0.02 220);
-  --sidebar-accent-foreground: oklch(0.1 0.02 220);
-  --sidebar-border: oklch(0.8 0.02 220);
-  --sidebar-ring: oklch(0.7 0.1 55);
+  --sidebar: #fafafa;
+  --sidebar-foreground: #1a1a1a; /* Sidebar text color */
+  --sidebar-primary: #d4a853;
+  --sidebar-primary-foreground: #1a1a1a; /* Sidebar primary text color */
+  --sidebar-accent: #e5e5e5;
+  --sidebar-accent-foreground: #1a1a1a; /* Sidebar accent text color */
+  --sidebar-border: #cccccc;
+  --sidebar-ring: #d4a853;
   /* Arknights colors */
   --ark-black: #0a0a0a;
   --ark-white: #f5f5f5;
   --ark-gold: #d4a853;
   --ark-orange: #ff6b35;
   --ark-red: #cc3333;
+  --ark-purple: #7c3aed; /* Darker purple for light mode */
 }
 
 /* Dark mode - Deep black tactical */
 .dark {
-  --background: oklch(0.06 0.01 250);
-  --foreground: oklch(0.95 0.01 220);
-  --card: oklch(0.08 0.01 250);
-  --card-foreground: oklch(0.95 0.01 220);
-  --popover: oklch(0.08 0.01 250);
-  --popover-foreground: oklch(0.95 0.01 220);
-  --primary: oklch(0.95 0.01 220);
-  --primary-foreground: oklch(0.06 0.01 250);
-  --secondary: oklch(0.12 0.01 250);
-  --secondary-foreground: oklch(0.95 0.01 220);
-  --muted: oklch(0.15 0.01 250);
-  --muted-foreground: oklch(0.6 0.01 220);
-  --accent: oklch(0.7 0.15 55);
-  --accent-foreground: oklch(0.1 0.02 55);
-  --destructive: oklch(0.5 0.2 25);
-  --destructive-foreground: oklch(0.95 0.01 25);
-  --border: oklch(0.25 0.02 250);
-  --input: oklch(0.12 0.01 250);
-  --ring: oklch(0.7 0.15 55);
-  --sidebar: oklch(0.08 0.01 250);
-  --sidebar-foreground: oklch(0.95 0.01 220);
-  --sidebar-primary: oklch(0.7 0.15 55);
-  --sidebar-primary-foreground: oklch(0.1 0.02 55);
-  --sidebar-accent: oklch(0.12 0.01 250);
-  --sidebar-accent-foreground: oklch(0.95 0.01 220);
-  --sidebar-border: oklch(0.25 0.02 250);
-  --sidebar-ring: oklch(0.7 0.15 55);
+  --background: #0a0a0a;
+  --foreground: #fbfbfb; /* Main text color */
+  --card: #141414;
+  --card-foreground: #fbfbfb; /* Card text color */
+  --popover: #141414;
+  --popover-foreground: #fbfbfb; /* Popover text color */
+  --primary: #f5f5f5;
+  --primary-foreground: #0a0a0a; /* Primary button text color */
+  --secondary: #1f1f1f;
+  --secondary-foreground: #fbfbfb; /* Secondary button text color */
+  --muted: #262626;
+  --muted-foreground: #999999; /* Muted text color */
+  --accent: #d4a853;
+  --accent-foreground: #1a1a1a; /* Accent text color */
+  --destructive: #cc3333;
+  --destructive-foreground: #fbfbfb; /* Destructive button text color */
+  --border: #404040;
+  --input: #1f1f1f;
+  --ring: #d4a853;
+  --sidebar: #141414;
+  --sidebar-foreground: #fbfbfb; /* Sidebar text color */
+  --sidebar-primary: #d4a853;
+  --sidebar-primary-foreground: #1a1a1a; /* Sidebar primary text color */
+  --sidebar-accent: #1f1f1f;
+  --sidebar-accent-foreground: #fbfbfb; /* Sidebar accent text color */
+  --sidebar-border: #404040;
+  --sidebar-ring: #d4a853;
+  /* Arknights colors */
+  --ark-purple: #a78bfa; /* Lighter purple for dark mode */
 }
 
+/* Theme configuration with custom fonts and color mappings */
 @theme inline {
   --font-sans: "Exo 2", system-ui, sans-serif;
   --font-mono: "Share Tech Mono", "Fira Code", monospace;
@@ -120,6 +123,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-ark-black: var(--ark-black);
+  --color-ark-white: var(--ark-white);
+  --color-ark-gold: var(--ark-gold);
+  --color-ark-orange: var(--ark-orange);
+  --color-ark-red: var(--ark-red);
 }
 
 @layer base {
@@ -143,8 +151,8 @@ canvas {
 
 /* Tactical file card with corner cut */
 .ark-card {
-  background: rgba(10, 10, 10, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--card);
+  border: 1px solid var(--border);
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
   position: relative;
 }
@@ -156,22 +164,23 @@ canvas {
   right: 0;
   width: 17px;
   height: 17px;
-  background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.1) 50%);
+  background: linear-gradient(135deg, transparent 50%, var(--foreground) 50%);
+  opacity: 0.1;
   pointer-events: none;
 }
 
 /* Floppy disk style card */
 .ark-floppy {
-  background: rgba(10, 10, 10, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--card);
+  border: 1px solid var(--border);
   position: relative;
   clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
 }
 
 /* Top bar skewed style (skew removed) */
 .ark-topbar {
-  background: rgba(10, 10, 10, 0.98);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
 }
 /* .ark-topbar-content { transform: skewX(2deg); } */
 
@@ -223,53 +232,53 @@ canvas {
 
 /* High contrast button */
 .ark-button {
-  background: rgba(10, 10, 10, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--foreground);
   transition: all 0.15s ease;
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
 }
 
 .ark-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--muted);
+  border-color: var(--foreground);
 }
 
 .ark-button.selected {
-  background: rgba(255, 255, 255, 0.95);
-  color: rgba(10, 10, 10, 0.95);
-  border-color: rgba(255, 255, 255, 1);
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
 }
 
 /* Gold accent button */
 .ark-button-gold {
-  background: rgba(10, 10, 10, 0.9);
-  border: 1px solid rgba(212, 168, 83, 0.5);
-  color: #d4a853;
+  background: var(--card);
+  border: 1px solid var(--ark-gold);
+  color: var(--ark-gold);
 }
 
 .ark-button-gold:hover {
-  background: rgba(212, 168, 83, 0.15);
-  border-color: #d4a853;
+  background: var(--ark-gold);
+  color: var(--background);
 }
 
 /* Danger button */
 .ark-button-danger {
-  background: rgba(10, 10, 10, 0.9);
-  border: 1px solid rgba(204, 51, 51, 0.5);
-  color: #cc3333;
+  background: var(--card);
+  border: 1px solid var(--destructive);
+  color: var(--destructive);
 }
 
 .ark-button-danger:hover {
-  background: rgba(204, 51, 51, 0.15);
-  border-color: #cc3333;
+  background: var(--destructive);
+  color: var(--destructive-foreground);
 }
 
 /* Resource divider */
 .ark-divider {
   width: 1px;
   height: 24px;
-  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  background: linear-gradient(180deg, transparent, var(--border), transparent);
 }
 
 /* Scanline overlay */
@@ -290,8 +299,8 @@ canvas {
     0deg,
     transparent,
     transparent 2px,
-    rgba(0, 0, 0, 0.1) 2px,
-    rgba(0, 0, 0, 0.1) 4px
+    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.05) 4px
   );
   background-size: 100% 4px;
   animation: scanline-scroll 10s linear infinite;
@@ -306,7 +315,7 @@ canvas {
 }
 
 .status-warning {
-  background: #d4a853;
+  background: var(--ark-gold);
   box-shadow: 0 0 8px rgba(212, 168, 83, 0.8);
 }
 
@@ -394,10 +403,10 @@ canvas {
 @keyframes border-pulse {
   0%,
   100% {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--border);
   }
   50% {
-    border-color: rgba(255, 255, 255, 0.25);
+    border-color: var(--foreground);
   }
 }
 
@@ -420,11 +429,11 @@ canvas {
 
 /* Text glow */
 .text-glow-gold {
-  text-shadow: 0 0 10px rgba(212, 168, 83, 0.5);
+  text-shadow: 0 0 10px var(--ark-gold);
 }
 
 .text-glow-white {
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  text-shadow: 0 0 10px var(--foreground);
 }
 
 /* Range slider */
@@ -436,7 +445,7 @@ input[type="range"] {
 
 input[type="range"]::-webkit-slider-runnable-track {
   height: 2px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--border);
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -444,7 +453,7 @@ input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 12px;
   height: 12px;
-  background: #d4a853;
+  background: var(--ark-gold);
   margin-top: -5px;
   cursor: pointer;
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
@@ -452,13 +461,13 @@ input[type="range"]::-webkit-slider-thumb {
 
 input[type="range"]::-moz-range-track {
   height: 2px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--border);
 }
 
 input[type="range"]::-moz-range-thumb {
   width: 12px;
   height: 12px;
-  background: #d4a853;
+  background: var(--ark-gold);
   cursor: pointer;
   border: none;
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
@@ -477,17 +486,18 @@ input[type="range"]::-moz-range-thumb {
 .barcode {
   background: repeating-linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.6) 0px,
-    rgba(255, 255, 255, 0.6) 1px,
+    var(--foreground) 0px,
+    var(--foreground) 1px,
     transparent 1px,
     transparent 3px,
-    rgba(255, 255, 255, 0.6) 3px,
-    rgba(255, 255, 255, 0.6) 5px,
+    var(--foreground) 3px,
+    var(--foreground) 5px,
     transparent 5px,
     transparent 6px,
-    rgba(255, 255, 255, 0.6) 6px,
-    rgba(255, 255, 255, 0.6) 7px,
+    var(--foreground) 6px,
+    var(--foreground) 7px,
     transparent 7px,
     transparent 10px
   );
+  opacity: 0.6;
 }

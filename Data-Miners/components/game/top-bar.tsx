@@ -17,9 +17,9 @@ function TacticalResourceCard({ icon, label, value, max, suffix }: TacticalResou
     <div className="flex items-center gap-2">
       <div className="opacity-60">{icon}</div>
       <div className="flex items-baseline gap-1">
-        <span className="font-mono text-sm text-white tabular-nums">{String(value).padStart(3, " ")}</span>
-        {max !== undefined && <span className="font-mono text-[10px] text-white/40">/{max}</span>}
-        {suffix && <span className="font-mono text-[10px] text-white/40">{suffix}</span>}
+        <span className="font-mono text-sm text-foreground tabular-nums">{String(value).padStart(3, " ")}</span>
+        {max !== undefined && <span className="font-mono text-[10px] text-foreground/40">/{max}</span>}
+        {suffix && <span className="font-mono text-[10px] text-foreground/40">{suffix}</span>}
       </div>
     </div>
   )
@@ -36,8 +36,8 @@ function OpponentInfoCard({ icon, label, value }: OpponentInfoCardProps) {
     <div className="flex items-center gap-2">
       <div className="opacity-60">{icon}</div>
       <div className="flex flex-col">
-        <span className="font-mono text-[10px] text-white/40 uppercase tracking-wider">{label}</span>
-        <span className="font-mono text-sm text-white tabular-nums">{value}</span>
+        <span className="font-mono text-[10px] text-foreground/40 uppercase tracking-wider">{label}</span>
+        <span className="font-mono text-sm text-foreground tabular-nums">{value}</span>
       </div>
     </div>
   )
@@ -62,7 +62,7 @@ export function TopBar({ gameState, onShowTechTree, onShowSettings }: TopBarProp
               <div
                 className={`w-2 h-2 ${powerStatus === "stable" ? "status-online" : "status-danger pulse-tactical"}`}
               />
-              <span className="font-serif text-sm sm:text-base font-medium text-white/90 tracking-wide italic">
+              <span className="font-serif text-sm sm:text-base font-medium text-foreground/90 tracking-wide italic">
                 UPLINK STATUS
               </span>
               <span
@@ -140,8 +140,8 @@ export function TopBar({ gameState, onShowTechTree, onShowSettings }: TopBarProp
 
             {/* Cycle counter - hidden on very small screens */}
             <div className="hidden sm:flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-white/40" />
-              <span className="font-mono text-xs sm:text-sm text-white tabular-nums">
+              <Clock className="w-3.5 h-3.5 text-foreground/40" />
+              <span className="font-mono text-xs sm:text-sm text-foreground tabular-nums">
                 {String(gameState.tick).padStart(4, "0")}
               </span>
             </div>

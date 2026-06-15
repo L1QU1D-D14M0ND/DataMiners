@@ -367,7 +367,7 @@ export default function GameClient() {
 
   if (status === "guest") {
     return (
-      <div className="min-h-screen bg-[#050508] flex items-center justify-center px-4 py-12 relative overflow-hidden">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12 relative overflow-hidden">
         <AuthBackground />
         <div className="relative z-10 w-full max-w-md">
           <AuthCard>
@@ -495,7 +495,7 @@ export default function GameClient() {
                 }
               }}
               disabled={loginLoading || registerLoading}
-              className="text-[#d4a853]/70 hover:text-[#d4a853] text-sm font-heading tracking-wider transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              className="text-ark-gold/70 hover:text-ark-gold text-sm font-heading tracking-wider transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               {showRegister ? "Already have an account? Sign In" : "Need an account? Register"}
             </button>
@@ -509,7 +509,7 @@ export default function GameClient() {
 
   if (status === "admin_choice") {
     return (
-      <div className="min-h-screen bg-[#050508] flex items-center justify-center px-4 py-12 relative overflow-hidden">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12 relative overflow-hidden">
         <AuthBackground />
         <div className="relative z-10 w-full max-w-md">
           <AuthCard>
@@ -520,17 +520,17 @@ export default function GameClient() {
 
             {/* Choice content */}
             <div className="p-6 space-y-4">
-              <div className="text-center text-white/70 text-sm mb-4">
+              <div className="text-center text-foreground/70 text-sm mb-4">
                 Welcome, {user?.name}. You have administrator privileges.
               </div>
 
               {/* Frontend Menu button */}
               <button
                 onClick={() => setStatus("authenticated")}
-                className="group relative w-full ark-floppy p-4 flex items-center justify-center gap-3 transition-all duration-200 border-[#d4a853]/50 hover:border-[#d4a853] hover:bg-[#d4a853]/10"
+                className="group relative w-full ark-floppy p-4 flex items-center justify-center gap-3 transition-all duration-200 border-ark-gold/50 hover:border-ark-gold hover:bg-ark-gold/10"
               >
-                <div className="flex-shrink-0 text-[#d4a853]">{Icons.home}</div>
-                <div className="font-heading text-sm tracking-wider text-[#d4a853]">
+                <div className="flex-shrink-0 text-ark-gold">{Icons.home}</div>
+                <div className="font-heading text-sm tracking-wider text-ark-gold">
                   FRONTEND MENU
                 </div>
               </button>
@@ -540,10 +540,10 @@ export default function GameClient() {
                 onClick={() => {
                   window.location.href = adminDashboardUrl
                 }}
-                className="group relative w-full ark-floppy p-4 flex items-center justify-center gap-3 transition-all duration-200 border-[#d4a853]/50 hover:border-[#d4a853] hover:bg-[#d4a853]/10"
+                className="group relative w-full ark-floppy p-4 flex items-center justify-center gap-3 transition-all duration-200 border-ark-gold/50 hover:border-ark-gold hover:bg-ark-gold/10"
               >
-                <div className="flex-shrink-0 text-[#d4a853]">{Icons.settings}</div>
-                <div className="font-heading text-sm tracking-wider text-[#d4a853]">
+                <div className="flex-shrink-0 text-ark-gold">{Icons.settings}</div>
+                <div className="font-heading text-sm tracking-wider text-ark-gold">
                   BACKEND DASHBOARD
                 </div>
               </button>

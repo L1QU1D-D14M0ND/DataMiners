@@ -22,11 +22,11 @@ return new class extends Migration
             $table->foreign('cosmetics_cosmetic_id')
                 ->references('id')
                 ->on('cosmetics')
-                ->onDelete('cascade');
+                ->onDelete('restrict');
             $table->foreign('sets_set_id')
                 ->references('id')
                 ->on('sets')
-                ->onDelete('cascade');
+                ->onDelete('restrict');
         });
     }
 

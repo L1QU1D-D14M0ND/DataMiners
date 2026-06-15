@@ -12,6 +12,7 @@ class GameSession extends Model
 
     protected $fillable = [
         'match_id',
+        'is_matchmade',
         'player1_id',
         'player2_id',
         'player1_state',

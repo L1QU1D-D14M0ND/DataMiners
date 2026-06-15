@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('matchmaking_queues', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('restrict');
             $table->string('queue_name'); // e.g., 'ranked', 'casual', 'tournament'
             $table->integer('skill_rating')->default(1000);
             $table->json('preferences')->nullable(); // Additional matchmaking preferences

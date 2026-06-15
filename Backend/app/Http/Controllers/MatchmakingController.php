@@ -291,6 +291,7 @@ class MatchmakingController extends Controller
                         // Create game session in database
                         $gameSession = GameSession::create([
                             'match_id' => $matchId,
+                            'is_matchmade' => true,
                             'player1_id' => $queue->user_id,
                             'player2_id' => $opponent->user_id,
                             'status' => 'active',
@@ -395,6 +396,7 @@ class MatchmakingController extends Controller
             if (count($playerIds) >= 2) {
                 $gameSession = GameSession::create([
                     'match_id' => $matchId,
+                    'is_matchmade' => true,
                     'player1_id' => $playerIds[0],
                     'player2_id' => $playerIds[1],
                     'status' => 'active',
