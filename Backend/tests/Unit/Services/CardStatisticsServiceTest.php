@@ -88,8 +88,8 @@ class CardStatisticsServiceTest extends TestCase
 
         // Card was played in 2 of 4 games
         DB::table('card_game_log')->insert([
-            ['cards_card_id' => $card->id, 'game_log_id' => $game1->id, 'user_id' => $user1->id],
-            ['cards_card_id' => $card->id, 'game_log_id' => $game2->id, 'user_id' => $user1->id],
+            ['card_id' => $card->id, 'game_log_id' => $game1->id, 'user_id' => $user1->id],
+            ['card_id' => $card->id, 'game_log_id' => $game2->id, 'user_id' => $user1->id],
         ]);
 
         $statistics = $this->service->getCardStatistics();
@@ -108,9 +108,9 @@ class CardStatisticsServiceTest extends TestCase
         $deck2 = $user->decks()->create(['deck_name' => 'Deck 2']);
         $user->decks()->create(['deck_name' => 'Deck 3']);
 
-        DB::table('deck_card')->insert([
-            ['decks_deck_id' => $deck1->id, 'cards_card_id' => $card->id],
-            ['decks_deck_id' => $deck2->id, 'cards_card_id' => $card->id],
+        DB::table('card_deck')->insert([
+            ['deck_id' => $deck1->id, 'card_id' => $card->id],
+            ['deck_id' => $deck2->id, 'card_id' => $card->id],
         ]);
 
         $statistics = $this->service->getCardStatistics();

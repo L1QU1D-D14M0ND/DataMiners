@@ -13,27 +13,19 @@ class Deck extends Model
     /**
      * The "booted" method of the model.
      */
-    protected static function booted(): void
+    protected static function booted()
     {
+        // The 'created' event fires AFTER the deck is saved to the database
         static::created(function (Deck $deck) {
-            // Automatically add the 8 default cards when a deck is created
-            $defaultCardNames = [
-                'Power Surge',
-                'Signal Relay',
-                'Factory Overdrive',
-                'Data Cache',
-                'Reinforced Grid',
-                'Ore Harvest',
-                'Deep Uplink',
-                'System Cooldown',
-            ];
+            // 1. Fetch the IDs of the 8 default cards. 
+            // (Assuming you have a way to identify them, like an 'is_default' column)
+            $defaultCardIds = Card::where('id', '<', 9)
+                ->limit(8)
+                ->pluck('id');
 
-            $defaultCards = Card::whereIn('name', $defaultCardNames)->get();
-
-            if ($defaultCards->count() > 0) {
-                $defaultCardIds = $defaultCards->pluck('id')->toArray();
-                // Use sync instead of attach to avoid duplicates
-                $deck->cards()->sync($defaultCardIds);
+            // 2. Attach them to the deck
+            if ($defaultCardIds->isNotEmpty()) {
+                $deck->cards()->attach($defaultCardIds);
             }
         });
     }
@@ -51,6 +43,6 @@ class Deck extends Model
      */
     public function cards(): BelongsToMany
     {
-        return $this->belongsToMany(Card::class, 'deck_card', 'decks_deck_id', 'cards_card_id');
+        return $this->belongsToMany(Card::class); 
     }
 }

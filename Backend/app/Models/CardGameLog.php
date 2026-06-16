@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CardGameLog extends Model
 {
-    protected $fillable = ['game_log_id', 'cards_card_id', 'user_id'];
+    protected $fillable = ['card_id', 'game_log_id', 'user_id'];
     protected $table = 'card_game_log';
-    protected $primaryKey = ['game_log_id', 'cards_card_id', 'user_id'];
+    protected $primaryKey = ['card_id', 'game_log_id', 'user_id'];
     public $incrementing = false;
     public $timestamps = false;
 
@@ -18,7 +18,7 @@ class CardGameLog extends Model
      */
     public function gameLog(): BelongsTo
     {
-        return $this->belongsTo(GameLog::class, 'game_log_id');
+        return $this->belongsTo(GameLog::class);
     }
 
     /**
@@ -26,7 +26,7 @@ class CardGameLog extends Model
      */
     public function card(): BelongsTo
     {
-        return $this->belongsTo(Card::class, 'cards_card_id');
+        return $this->belongsTo(Card::class);
     }
 
     /**

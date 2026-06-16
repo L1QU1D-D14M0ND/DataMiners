@@ -21,9 +21,9 @@ return new class extends Migration
             $table->unsignedBigInteger('experience_points')->default(0);
             $table->unsignedBigInteger('credits')->default(0);
             $table->unsignedBigInteger('play_time')->default(0);
-            $table->unsignedBigInteger('role_id');
-            $table->unsignedBigInteger('decks_deck_id')->nullable();
-            $table->unsignedBigInteger('sets_set_id')->nullable();
+            $table->foreignId('role_id')->nullable();
+            $table->foreignId('deck_id')->nullable();
+            $table->foreignId('set_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

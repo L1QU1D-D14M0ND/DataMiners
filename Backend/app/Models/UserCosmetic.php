@@ -7,25 +7,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserCosmetic extends Model
 {
-    protected $fillable = ['users_user_id', 'cosmetics_cosmetic_id', 'unlocked'];
-    protected $table = 'user_cosmetic';
-    protected $primaryKey = ['users_user_id', 'cosmetics_cosmetic_id'];
+    protected $fillable = ['cosmetic_id', 'user_id', 'unlocked'];
+    protected $table = 'cosmetic_user';
+    protected $primaryKey = ['cosmetic_id', 'user_id'];
     public $incrementing = false;
-    public $timestamps = false;
-
-    /**
-     * Get the user.
-     */
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'users_user_id');
-    }
+    public $timestamps = true;
 
     /**
      * Get the cosmetic.
      */
     public function cosmetic(): BelongsTo
     {
-        return $this->belongsTo(Cosmetic::class, 'cosmetics_cosmetic_id');
+        return $this->belongsTo(Cosmetic::class);
+    }
+
+    /**
+     * Get the user.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

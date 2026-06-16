@@ -49,8 +49,7 @@ class User extends Authenticatable
      */
     public function cards()
     {
-        return $this->belongsToMany(Card::class, 'user_card', 'users_user_id', 'cards_card_id')
-            ->withPivot('unlocked');
+        return $this->belongsToMany(Card::class)->withPivot('unlocked');
     }
 
     /**
@@ -66,7 +65,7 @@ class User extends Authenticatable
      */
     public function sets()
     {
-        return $this->hasMany(Set::class, 'user_set_id');
+        return $this->hasMany(Set::class);
     }
 
     /**
@@ -90,9 +89,7 @@ class User extends Authenticatable
      */
     public function cosmetics()
     {
-        return $this->belongsToMany(Cosmetic::class, 'user_cosmetic', 'user_id', 'cosmetic_id')
-            ->withPivot('unlocked')
-            ->withTimestamps();
+        return $this->belongsToMany(Cosmetic::class)->withPivot('unlocked')->withTimestamps();
     }
 
     /**

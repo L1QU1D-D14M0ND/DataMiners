@@ -6,38 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('card_game_log', function (Blueprint $table) {
-            $table->unsignedBigInteger('game_log_id');
-            $table->unsignedBigInteger('cards_card_id');
-            $table->unsignedBigInteger('user_id');
+            // Modern, clean naming conventions
+            $table->foreignId('card_id')->constrained()->onDelete('cascade');
+            $table->foreignId('game_log_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Tracks who played it
             
-            // Composite primary key
-            $table->primary(['game_log_id', 'cards_card_id', 'user_id']);
-            
-            // Foreign keys
-            $table->foreign('game_log_id')
-                ->references('id')
-                ->on('game_logs')
-                ->onDelete('restrict');
-            $table->foreign('cards_card_id')
-                ->references('id')
-                ->on('cards')
-                ->onDelete('restrict');
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
-                ->onDelete('restrict');
+            // Composite primary key to prevent absolute duplicate entries
+            $table->primary(['card_id', 'game_log_id', 'user_id']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('card_game_log');

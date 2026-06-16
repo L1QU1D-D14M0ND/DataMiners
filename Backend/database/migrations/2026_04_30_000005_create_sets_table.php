@@ -13,12 +13,8 @@ return new class extends Migration
     {
         Schema::create('sets', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_set_id');
+            $table->foreignId('user_id')->nullable();
             $table->string('set_name');
-            $table->foreign('user_set_id')
-                ->references('id')
-                ->on('users')
-                ->onDelete('restrict');
             $table->timestamps();
         });
     }

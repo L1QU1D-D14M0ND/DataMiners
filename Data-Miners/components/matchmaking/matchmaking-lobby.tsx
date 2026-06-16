@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Clock, Users, X, Loader2 } from "lucide-react"
-import { matchmakingApi, type QueueStatus } from "@/lib/matchmaking"
+import { matchmakingApi } from "@/lib/matchmaking"
+import type { QueueStatus } from "@/lib/api-types"
 import { SoundManager } from "@/lib/game/sound-manager"
 import { formatDuration } from "@/lib/format"
 

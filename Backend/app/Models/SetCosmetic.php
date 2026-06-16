@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SetCosmetic extends Model
 {
-    protected $fillable = ['cosmetics_cosmetic_id', 'sets_set_id'];
-    protected $table = 'set_cosmetic';
-    protected $primaryKey = ['cosmetics_cosmetic_id', 'sets_set_id'];
+    protected $fillable = ['cosmetic_id', 'set_id'];
+    protected $table = 'cosmetic_set';
+    protected $primaryKey = ['cosmetic_id', 'set_id'];
     public $incrementing = false;
     public $timestamps = false;
 
@@ -18,7 +18,7 @@ class SetCosmetic extends Model
      */
     public function cosmetic(): BelongsTo
     {
-        return $this->belongsTo(Cosmetic::class, 'cosmetics_cosmetic_id');
+        return $this->belongsTo(Cosmetic::class);
     }
 
     /**
@@ -26,6 +26,6 @@ class SetCosmetic extends Model
      */
     public function set(): BelongsTo
     {
-        return $this->belongsTo(Set::class, 'sets_set_id');
+        return $this->belongsTo(Set::class);
     }
 }

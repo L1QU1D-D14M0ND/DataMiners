@@ -11,22 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('set_cosmetic', function (Blueprint $table) {
-            $table->unsignedBigInteger('cosmetics_cosmetic_id');
-            $table->unsignedBigInteger('sets_set_id');
+        Schema::create('cosmetic_set', function (Blueprint $table) {
+            $table->foreignId('cosmetic_id')->constrained()->onDelete('restrict');
+            $table->foreignId('set_id')->constrained()->onDelete('restrict');
             
             // Composite primary key
-            $table->primary(['cosmetics_cosmetic_id', 'sets_set_id']);
-            
-            // Foreign keys
-            $table->foreign('cosmetics_cosmetic_id')
-                ->references('id')
-                ->on('cosmetics')
-                ->onDelete('restrict');
-            $table->foreign('sets_set_id')
-                ->references('id')
-                ->on('sets')
-                ->onDelete('restrict');
+            $table->primary(['cosmetic_id', 'set_id']);
         });
     }
 
@@ -35,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('set_cosmetic');
+        Schema::dropIfExists('cosmetic_set');
     }
 };

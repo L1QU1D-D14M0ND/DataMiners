@@ -7,31 +7,32 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Card extends Model
 {
-    protected $fillable = ['name', 'experience_unlock', 'credits_unlock', 'is_default'];
+    protected $fillable = ['name', 'experience_unlock', 'credits_unlock'];
 
     /**
      * Get the users that have this card.
+     * Assumes table: 'card_user' (alphabetical order)
      */
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'user_card', 'cards_card_id', 'users_user_id')
-            ->withPivot('unlocked');
+        return $this->belongsToMany(User::class)->withPivot('unlocked');
     }
 
     /**
      * Get the decks that contain this card.
+     * Assumes table: 'card_deck' (alphabetical order)
      */
     public function decks(): BelongsToMany
     {
-        return $this->belongsToMany(Deck::class, 'deck_card', 'cards_card_id', 'decks_deck_id');
+        return $this->belongsToMany(Deck::class);
     }
 
     /**
      * Get the game logs where this card was played.
+     * Assumes table: 'card_game_log'
      */
     public function gameLogs(): BelongsToMany
     {
-        return $this->belongsToMany(GameLog::class, 'card_game_log', 'cards_card_id', 'game_log_id')
-            ->withPivot('user_id');
+        return $this->belongsToMany(GameLog::class)->withPivot('user_id');
     }
 }

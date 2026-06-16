@@ -201,6 +201,32 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     }
   }
 
+  const ensureEquippedSet = async () => {
+    if (!profileData?.user.equipped_set_id && profileData?.sets && profileData.sets.length > 0) {
+      try {
+        // Find default set first
+        const defaultSet = profileData.sets.find(s => s.set_name === 'Default')
+        if (defaultSet) {
+          await handleSwitchEquippedSet(defaultSet.id)
+          return
+        }
+        
+        // If no default set, find first set alphabetically
+        const sortedSets = [...profileData.sets].sort((a, b) => a.set_name.localeCompare(b.set_name))
+        if (sortedSets.length > 0) {
+          await handleSwitchEquippedSet(sortedSets[0].id)
+        }
+      } catch (err) {
+        console.error("Failed to auto-equip set:", err)
+      }
+    }
+  }
+
+  const handleClose = async () => {
+    await ensureEquippedSet()
+    onClose()
+  }
+
   const levelInfo = useMemo(() => {
     if (!profileData) return null
     return calculateLevelInfo(profileData.user.experience_points)
@@ -209,7 +235,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   return (
     <GameModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="Profile"
       maxWidth="max-w-2xl"
       className="max-h-[90vh] flex flex-col"
@@ -308,6 +334,19 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 {/* Sets Tab (Primary) */}
                 {activeTab === 'sets' && (
                   <div className="space-y-3">
+                    {/* Warning for no equipped set */}
+                    {!profileData.user.equipped_set_id && (
+                      <div className="bg-yellow-500/10 border border-yellow-500/30 p-3">
+                        <div className="flex items-start gap-2">
+                          <div className="text-yellow-400 mt-0.5">⚠</div>
+                          <div className="font-serif text-xs text-yellow-200/80">
+                            <div className="font-bold mb-1">No Set Equipped</div>
+                            <div>Exiting without equipping a set will automatically assign the default set. If the default set is deleted, the first set in alphabetical order will be equipped. If no sets exist, a default set will be created and equipped.</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between">
                       <div className="font-serif italic text-xs text-foreground/40">Quick-swap between cosmetic sets</div>
                       <button

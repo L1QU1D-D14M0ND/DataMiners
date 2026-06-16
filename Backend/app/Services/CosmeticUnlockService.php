@@ -26,16 +26,26 @@ class CosmeticUnlockService
      */
     public function unlockCosmeticsForLevel(User $user, int $level): void
     {
-        // Only unlock cosmetics at specific levels
         if (!isset(self::LEVEL_COSMETIC_MAPPING[$level])) {
             return;
         }
 
-        $cosmeticNames = self::LEVEL_COSMETIC_MAPPING[$level];
+        $cosmeticNames = array_values(self::LEVEL_COSMETIC_MAPPING[$level]);
 
-        foreach ($cosmeticNames as $typeName => $cosmeticName) {
-            $this->unlockCosmeticByName($user, $cosmeticName, $typeName);
+        // Fetch all cosmetics matching these names in one query
+        $cosmetics = Cosmetic::whereIn('name', $cosmeticNames)->pluck('id');
+
+        if ($cosmetics->isEmpty()) {
+            return;
         }
+
+        $syncData = $cosmetics->mapWithKeys(function ($id) {
+            return [$id => ['unlocked' => true]];
+        })->toArray();
+
+        // syncWithoutDetaching inherently ignores items the user already has,
+        // so we don't need to manually check if they already exist!
+        $user->cosmetics()->syncWithoutDetaching($syncData);
     }
 
     /**
@@ -79,14 +89,18 @@ class CosmeticUnlockService
      */
     public function unlockDefaultCosmetics(User $user): void
     {
-        $defaultCosmetics = Cosmetic::where('experience_unlock', 0)
+        // Get only the IDs to save memory, no need to hydrate full models
+        $defaultCosmeticIds = Cosmetic::where('experience_unlock', 0)
             ->where('credits_unlock', 0)
-            ->get();
+            ->pluck('id');
 
-        foreach ($defaultCosmetics as $cosmetic) {
-            $user->cosmetics()->syncWithoutDetaching([
-                $cosmetic->id => ['unlocked' => true],
-            ]);
+        // Format the array for syncWithoutDetaching: [id => ['unlocked' => true], ...]
+        $syncData = $defaultCosmeticIds->mapWithKeys(function ($id) {
+            return [$id => ['unlocked' => true]];
+        })->toArray();
+
+        if (!empty($syncData)) {
+            $user->cosmetics()->syncWithoutDetaching($syncData);
         }
     }
 
@@ -112,11 +126,8 @@ class CosmeticUnlockService
      */
     private function calculateUserLevel(int $experiencePoints): int
     {
-        $level = 1;
-        while (25 * ($level + 1) * $level <= $experiencePoints) {
-            $level++;
-        }
-        return $level;
+        // O(1) mathematical inverse of 25 * L * (L-1)
+        return (int) floor((25 + sqrt(625 + 100 * $experiencePoints)) / 50);
     }
 
     /**

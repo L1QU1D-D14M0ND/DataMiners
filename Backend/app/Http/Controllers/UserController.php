@@ -103,6 +103,42 @@ class UserController extends Controller
     {
         $user = $request->user();
 
+        // Ensure user has an equipped set
+        if (!$user->equipped_set_id) {
+            $sets = $user->sets;
+            
+            if ($sets->isEmpty()) {
+                // Create default set if no sets exist
+                $defaultSet = $user->sets()->create(['set_name' => 'Default']);
+                
+                // Attach default cosmetics to the default set
+                $defaultCosmetics = \App\Models\Cosmetic::where('experience_unlock', 0)
+                    ->where('credits_unlock', 0)
+                    ->pluck('id');
+                
+                if ($defaultCosmetics->count() > 0) {
+                    foreach ($defaultCosmetics as $cosmeticId) {
+                        $defaultSet->cosmetics()->attach($cosmeticId);
+                    }
+                }
+                
+                $user->equipped_set_id = $defaultSet->id;
+                $user->save();
+            } else {
+                // Find default set first
+                $defaultSet = $sets->firstWhere('set_name', 'Default');
+                if ($defaultSet) {
+                    $user->equipped_set_id = $defaultSet->id;
+                    $user->save();
+                } else {
+                    // Equip first set alphabetically
+                    $sortedSets = $sets->sortBy('set_name');
+                    $user->equipped_set_id = $sortedSets->first()->id;
+                    $user->save();
+                }
+            }
+        }
+
         $user->load(['sets.cosmetics.cosmeticType', 'cosmetics.cosmeticType', 'equippedProfilePicture', 'equippedFrame', 'equippedCard', 'equippedTitle', 'equippedSet', 'cards']);
 
         return response()->json([
@@ -294,7 +330,7 @@ class UserController extends Controller
         // Verify that the user owns the set they're trying to equip
         if ($validated['equipped_set_id']) {
             $set = Set::find($validated['equipped_set_id']);
-            if (!$set || $set->user_set_id !== $user->id) {
+            if (!$set || $set->user_id !== $user->id) {
                 return response()->json(['error' => 'You do not own this set'], 403);
             }
 
@@ -335,7 +371,7 @@ class UserController extends Controller
 
         // Verify that the user owns the set
         $set = Set::find($validated['set_id']);
-        if (!$set || $set->user_set_id !== $user->id) {
+        if (!$set || $set->user_id !== $user->id) {
             return response()->json(['error' => 'You do not own this set'], 403);
         }
 
@@ -378,7 +414,7 @@ class UserController extends Controller
 
         // Verify that the user owns the set
         $set = Set::find($validated['set_id']);
-        if (!$set || $set->user_set_id !== $user->id) {
+        if (!$set || $set->user_id !== $user->id) {
             return response()->json(['error' => 'You do not own this set'], 403);
         }
 
@@ -408,7 +444,7 @@ class UserController extends Controller
         $user = $request->user();
 
         // Verify that the user owns the set
-        if ($set->user_set_id !== $user->id) {
+        if ($set->user_id !== $user->id) {
             return response()->json(['error' => 'You do not own this set'], 403);
         }
 

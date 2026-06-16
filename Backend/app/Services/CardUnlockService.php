@@ -39,7 +39,7 @@ class CardUnlockService
 
         // Check if user already has this card unlocked
         $alreadyUnlocked = $user->cards()
-            ->where('cards_card_id', $card->id)
+            ->where('card_id', $card->id)
             ->where('unlocked', true)
             ->exists();
 

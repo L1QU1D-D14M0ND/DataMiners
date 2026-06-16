@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { AlertCircle } from "lucide-react"
-import type { CardUsageEvent } from "@/lib/websocket-client"
+import type { CardUsageEvent } from "@/lib/api-types"
 
 interface CardNotificationProps {
   event: CardUsageEvent

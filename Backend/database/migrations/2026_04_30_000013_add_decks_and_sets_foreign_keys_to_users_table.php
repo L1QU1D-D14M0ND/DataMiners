@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -11,16 +9,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreign('decks_deck_id')
-                ->references('id')
-                ->on('decks')
-                ->onDelete('set null');
-            $table->foreign('sets_set_id')
-                ->references('id')
-                ->on('sets')
-                ->onDelete('set null');
-        });
+        // Foreign keys are now defined in the users table creation migration
+        // This migration is no longer needed
     }
 
     /**
@@ -28,9 +18,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['decks_deck_id']);
-            $table->dropForeign(['sets_set_id']);
-        });
+        // Foreign keys are now defined in the users table creation migration
+        // This migration is no longer needed
     }
 };

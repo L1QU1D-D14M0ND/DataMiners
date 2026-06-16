@@ -197,29 +197,29 @@ export function GameUI({
       )
       setRewardStatus(backendReward ? "saved" : "idle")
 
-      // Fetch user profiles for the match result screen
-      if (matchId) {
-        try {
-          const infoResponse = await axios.get<{ opponent: UserProfileData }>(`/api/game-sessions/${matchId}/info`)
-          setOpponentProfile(infoResponse.data.opponent)
-        } catch (error) {
-          console.error("Failed to fetch opponent profile:", error)
+      // Set current user profile from localStorage (always do this immediately)
+      try {
+        const userJson = localStorage.getItem('user')
+        if (userJson) {
+          const user = JSON.parse(userJson)
+          setCurrentUserProfile({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+          })
         }
+      } catch (e) {
+        console.error("Failed to parse user from localStorage:", e)
+      }
 
-        // Set current user profile from localStorage
-        try {
-          const userJson = localStorage.getItem('user')
-          if (userJson) {
-            const user = JSON.parse(userJson)
-            setCurrentUserProfile({
-              id: user.id,
-              name: user.name,
-              email: user.email,
-            })
-          }
-        } catch (e) {
-          console.error("Failed to parse user from localStorage:", e)
-        }
+      // Fetch opponent profile for the match result screen (optional, don't delay win screen)
+      if (matchId) {
+        axios.get<{ opponent: UserProfileData }>(`/api/game-sessions/${matchId}/info`)
+          .then(response => setOpponentProfile(response.data.opponent))
+          .catch(error => {
+            // Match may already be deleted from server, don't delay the win screen
+            console.log("Opponent profile not available (match may be deleted):", error.message)
+          })
       }
     } catch (error) {
       console.error("Failed to persist match result:", error)

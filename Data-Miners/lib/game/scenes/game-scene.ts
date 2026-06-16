@@ -7,6 +7,7 @@ import { TechRegistry } from "../tech"
 import { SoundManager } from "../sound-manager"
 import { BackgroundMusicManager } from "../background-music-manager"
 import axios from "@/lib/axios"
+import { isAxiosError } from "axios"
 import type { ReportMatchEndRequest, GameStateUpdateRequest, CardUsedRequest } from "@/lib/api-types"
 
 const TILE_SIZE = 32
@@ -15,13 +16,16 @@ const GRID_HEIGHT = 15
 const TICK_INTERVAL = 1000
 
 const MIN_ZOOM = 0.5
-const MAX_ZOOM = 2
+const MAX_ZOOM = 2  
 const ZOOM_STEP = 0.1
 const PAN_SPEED = 10
 
 const WIN_DOWNLOAD_SPEED_THRESHOLD = 10
 
 export class GameScene extends Phaser.Scene {
+  private isGameOver = false;
+  private tickTimer: Phaser.Time.TimerEvent | null = null; // Store the timer
+
   private grid: TileData[][] = []
   private buildings: Map<string, Building> = new Map()
   private tileSprites: Phaser.GameObjects.Rectangle[][] = []
@@ -81,6 +85,8 @@ export class GameScene extends Phaser.Scene {
     this.setupTechListener() // Add tech listener
     this.setupUserListener() // Add user listener
     this.startBackgroundMusic()
+
+    window.dispatchEvent(new CustomEvent("gameSceneReady"))
   }
 
   private addWindowListener<T extends Event>(type: string, listener: (event: T) => void) {
@@ -189,6 +195,20 @@ export class GameScene extends Phaser.Scene {
       console.log('[GameScene] User updated:', this.currentUser)
     }
     this.addWindowListener("userUpdate", handleUserUpdate)
+
+    const handleMatchEnding = () => {
+      this.isGameOver = true;
+      this.inputBlocked = true;
+      
+      // Kill the 1-second heartbeat timer immediately
+      if (this.tickTimer) {
+        this.tickTimer.remove();
+      }
+    }
+
+    // Listen for both win and loss events to trigger the shutdown
+    this.addWindowListener("gameWon", handleMatchEnding);
+    this.addWindowListener("gameLost", handleMatchEnding);
 
     // Also try to read from localStorage as a fallback
     const userJson = localStorage.getItem('user')
@@ -628,7 +648,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private startTickSystem() {
-    this.time.addEvent({
+    this.tickTimer = this.time.addEvent({
       delay: TICK_INTERVAL,
       callback: this.onTick,
       callbackScope: this,
@@ -838,16 +858,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   private checkWinCondition() {
-    if (this.gameWon) return
+    if (this.gameWon || this.inputBlocked) return
 
+    // 1. Check if WE won
     const downloadSpeed = this.calculateDownloadSpeed()
     if (downloadSpeed >= WIN_DOWNLOAD_SPEED_THRESHOLD) {
       this.gameWon = true
       this.inputBlocked = true
 
-      // Report match end to backend if in PvP
       if (this.matchId) {
-          this.reportMatchEndWithRetry(this.matchId, "win")
+        this.reportMatchEndWithRetry(this.matchId, "win")
       }
 
       window.dispatchEvent(
@@ -856,6 +876,22 @@ export class GameScene extends Phaser.Scene {
             outcome: "win",
             playerStats: this.getPlayerMatchStats(downloadSpeed),
             rivalStats: null,
+          },
+        }),
+      )
+      return; // Exit early
+    }
+
+    // 2. Check if OPPONENT won (Instant local verification)
+    if (this.opponentState && this.opponentState.downloadSpeed >= WIN_DOWNLOAD_SPEED_THRESHOLD) {
+      this.gameWon = true // Prevents further checks
+      this.inputBlocked = true
+
+      window.dispatchEvent(
+        new CustomEvent("gameLost", {
+          detail: {
+            outcome: "loss",
+            victoryMethod: "Opponent Completed Uplink",
           },
         }),
       )
@@ -1062,6 +1098,20 @@ export class GameScene extends Phaser.Scene {
     }
     this.addWindowListener("spendData", handleSpendData)
 
+    const handleMatchEnding = () => {
+      this.isGameOver = true;
+      this.inputBlocked = true;
+      
+      // Kill the 1-second heartbeat timer immediately
+      if (this.tickTimer) {
+        this.tickTimer.remove();
+      }
+    }
+
+    // Listen for both win and loss events to trigger the shutdown
+    this.addWindowListener("gameWon", handleMatchEnding);
+    this.addWindowListener("gameLost", handleMatchEnding);
+
     const handleTechUnlocked = () => {
       this.applyTechBonuses()
       this.refreshBuildingStats()
@@ -1189,7 +1239,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private async updateGameStateToServer() {
-    if (!this.matchId || this.gameWon) return
+    if (!this.matchId || this.isGameOver) return
 
     const downloadSpeed = this.calculateDownloadSpeed()
 
@@ -1210,7 +1260,13 @@ export class GameScene extends Phaser.Scene {
         console.log('[GameScene] Cannot send opponent state - user or WebSocket not connected')
       }
     } catch (error) {
-      console.error('Failed to update game state:', error)
+      if (isAxiosError(error) && error.response?.status === 404) {
+        console.log('[GameScene] Match no longer exists on server. Shutting down loop.');
+        this.isGameOver = true;
+        if (this.tickTimer) this.tickTimer.remove();
+      } else {
+        console.error('Failed to update game state:', error);
+      }
     }
   }
 

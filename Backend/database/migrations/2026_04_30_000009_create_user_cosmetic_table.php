@@ -11,24 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_cosmetic', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('cosmetic_id');
+        Schema::create('cosmetic_user', function (Blueprint $table) {
+            $table->foreignId('cosmetic_id')->constrained()->onDelete('restrict');
+            $table->foreignId('user_id')->constrained()->onDelete('restrict');
             $table->boolean('unlocked')->nullable();
             $table->timestamps();
             
             // Composite primary key
-            $table->primary(['user_id', 'cosmetic_id']);
-            
-            // Foreign keys
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
-                ->onDelete('restrict');
-            $table->foreign('cosmetic_id')
-                ->references('id')
-                ->on('cosmetics')
-                ->onDelete('restrict');
+            $table->primary(['cosmetic_id', 'user_id']);
         });
     }
 
@@ -37,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_cosmetic');
+        Schema::dropIfExists('cosmetic_user');
     }
 };

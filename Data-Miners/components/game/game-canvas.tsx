@@ -89,11 +89,16 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
 
     gameRef.current = new Phaser.Game(config)
 
-    // Dispatch user update event after game is created
-    if (user) {
-      console.log('[GameCanvas] Dispatching user update event after game creation:', user)
-      window.dispatchEvent(new CustomEvent("userUpdate", { detail: user }))
+    // 👇 Handle the handshake when the scene is fully booted
+    const handleSceneReady = () => {
+      console.log('[GameCanvas] Phaser Scene is ready. Dispatching initial data sync.')
+      if (user) {
+        window.dispatchEvent(new CustomEvent("userUpdate", { detail: user }))
+      }
+      window.dispatchEvent(new CustomEvent("deckIdsUpdate", { detail: deckIds }))
+      window.dispatchEvent(new CustomEvent("gameSettingsUpdate", { detail: settings }))
     }
+    window.addEventListener("gameSceneReady", handleSceneReady)
 
     const handleStateUpdate = (event: Event) => setGameState((event as CustomEvent<GameState>).detail)
     window.addEventListener("gameStateUpdate", handleStateUpdate)
@@ -118,7 +123,6 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
     const handleCardUsedUpdate = (event: Event) => {
       const detail = (event as CustomEvent).detail
       console.log('[GameCanvas] Opponent used card:', detail.cardName)
-      // Show warning message to player that opponent used a card
       setCardWarning({
         message: `Opponent used: ${detail.cardName}`,
         timestamp: Date.now()
@@ -128,22 +132,27 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
 
     const handleMatchEndedUpdate = (event: Event) => {
       const detail = (event as CustomEvent).detail
-      console.log('[GameCanvas] Match ended:', detail)
-      // Dispatch proper game events to trigger win/lose screen
+      
       const currentUserJson = localStorage.getItem('user')
       const currentUser = currentUserJson ? JSON.parse(currentUserJson) : null
+      
       if (currentUser) {
-        if (detail.winnerId === currentUser.id) {
+        const isWinner = Number(detail.winnerId) === Number(currentUser.id)
+        
+        if (isWinner) {
           window.dispatchEvent(new CustomEvent('gameWon', {
-            detail: {
-              victoryMethod: 'Opponent Quit'
+            detail: { 
+              outcome: 'win',
+              victoryMethod: 'Opponent Quit',
+              playerStats: { timeElapsedSeconds: 0, energyGenerated: 0, downloadSpeed: 0 }
             }
           }))
-        } else if (detail.loserId === currentUser.id) {
-          // Player lost - dispatch gameLost event to show lose screen
+        } else {
           window.dispatchEvent(new CustomEvent('gameLost', {
-            detail: {
-              victoryMethod: 'Defeat'
+            detail: { 
+              outcome: 'loss',
+              victoryMethod: 'Defeat',
+              playerStats: { timeElapsedSeconds: 0, energyGenerated: 0, downloadSpeed: 0 }
             }
           }))
         }
@@ -159,6 +168,9 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
     window.addEventListener("keyboardToolChange", handleKeyboardToolChange)
 
     return () => {
+      // 👇 Clean up the handshake listener
+      window.removeEventListener("gameSceneReady", handleSceneReady)
+      
       window.removeEventListener("gameStateUpdate", handleStateUpdate)
       window.removeEventListener("opponentStateUpdate", handleOpponentStateUpdate)
       window.removeEventListener("cardUsedUpdate", handleCardUsedUpdate)
@@ -168,7 +180,7 @@ export default function GameCanvas({ onReturnToMenu, deckIds, matchId, settings,
       gameRef.current?.destroy(true)
       gameRef.current = null
     }
-  }, [])
+  }, []) // Keep dependencies empty so Phaser only boots once
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-background">

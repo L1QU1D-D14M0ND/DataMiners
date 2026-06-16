@@ -57,9 +57,13 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function (User $user) {
             // Create a default deck for the user
-            $user->decks()->create([
+            $userDeck = $user->decks()->create([
                 'deck_name' => 'Default',
             ]);
+
+            // Equip the default deck
+            $user->deck_id = $userDeck->id;
+            $user->save();
 
             // Create a default set for the user
             $userSet = $user->sets()->create([
@@ -79,6 +83,10 @@ class UserFactory extends Factory
                     $userSet->cosmetics()->attach($cosmeticId);
                 }
             }
+
+            // Equip the default set
+            $user->equipped_set_id = $userSet->id;
+            $user->save();
 
             // Attach default cosmetics (one from each type)
             $defaultCosmetics = \App\Models\Cosmetic::whereIn('name', [

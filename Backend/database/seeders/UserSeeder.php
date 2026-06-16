@@ -41,9 +41,13 @@ class UserSeeder extends Seeder
 
         // Create default deck for admin user
         // The Deck model's created event will automatically add the 8 default cards
-        $admin->decks()->create([
+        $adminDeck = $admin->decks()->create([
             'deck_name' => 'Default',
         ]);
+
+        // Equip the default deck
+        $admin->deck_id = $adminDeck->id;
+        $admin->save();
 
         // Create default set for admin user
         $adminSet = $admin->sets()->create([
@@ -60,6 +64,10 @@ class UserSeeder extends Seeder
                 $adminSet->cosmetics()->attach($cosmeticId);
             }
         }
+
+        // Equip the default set
+        $admin->equipped_set_id = $adminSet->id;
+        $admin->save();
 
         // Create 2 test users with player roles
         $playerRole = Role::where('name', 'Player')->first();
@@ -86,9 +94,13 @@ class UserSeeder extends Seeder
 
         // Create default deck for test user 1
         // The Deck model's created event will automatically add the 8 default cards
-        $testUser1->decks()->create([
+        $testUser1Deck = $testUser1->decks()->create([
             'deck_name' => 'Default',
         ]);
+
+        // Equip the default deck
+        $testUser1->deck_id = $testUser1Deck->id;
+        $testUser1->save();
 
         // Create default set for test user 1
         $testUser1Set = $testUser1->sets()->create([
@@ -105,6 +117,10 @@ class UserSeeder extends Seeder
                 $testUser1Set->cosmetics()->attach($cosmeticId);
             }
         }
+
+        // Equip the default set
+        $testUser1->equipped_set_id = $testUser1Set->id;
+        $testUser1->save();
 
         $testUser2 = User::create([
             'name' => 'TestPlayer2',
@@ -128,9 +144,13 @@ class UserSeeder extends Seeder
 
         // Create default deck for test user 2
         // The Deck model's created event will automatically add the 8 default cards
-        $testUser2->decks()->create([
+        $testUser2Deck = $testUser2->decks()->create([
             'deck_name' => 'Default',
         ]);
+
+        // Equip the default deck
+        $testUser2->deck_id = $testUser2Deck->id;
+        $testUser2->save();
 
         // Create default set for test user 2
         $testUser2Set = $testUser2->sets()->create([
@@ -148,9 +168,13 @@ class UserSeeder extends Seeder
             }
         }
 
+        // Equip the default set
+        $testUser2->equipped_set_id = $testUser2Set->id;
+        $testUser2->save();
+
         // Create 97 regular player users (99 total - 2 test users - 1 admin)
         User::factory()->count(97)->create();
 
-        $this->command->info('102 users created successfully.');
+        $this->command->info('100 users created successfully.');
     }
 }

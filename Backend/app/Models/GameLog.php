@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class GameLog extends Model
 {
@@ -32,8 +32,7 @@ class GameLog extends Model
      */
     public function cards(): BelongsToMany
     {
-        return $this->belongsToMany(Card::class, 'card_game_log', 'game_log_id', 'cards_card_id')
-            ->withPivot('user_id');
+        return $this->belongsToMany(Card::class)->withPivot('user_id');
     }
 
     /**

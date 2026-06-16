@@ -32,6 +32,6 @@ class Cosmetic extends Model
      */
     public function sets(): BelongsToMany
     {
-        return $this->belongsToMany(Set::class, 'set_cosmetic', 'cosmetics_cosmetic_id', 'sets_set_id');
+        return $this->belongsToMany(Set::class);
     }
 }
